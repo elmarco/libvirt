@@ -2711,6 +2711,11 @@
               </choice>
             </attribute>
           </optional>
+          <optional>
+            <attribute name="gl">
+              <ref name="virYesNo"/>
+            </attribute>
+          </optional>
           <interleave>
             <ref name="listenElements"/>
             <zeroOrMore>
@@ -2921,6 +2926,7 @@
                 <value>vmvga</value>
                 <value>xen</value>
                 <value>vbox</value>
+                <value>virtio</value>
               </choice>
             </attribute>
             <group>

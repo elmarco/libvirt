@@ -2700,6 +2700,11 @@
       "type": "bool"
     },
     {
+      "name": "virgl",
+      "description": "on/off",
+      "type": "bool"
+    },
+    {
       "name": "max_outputs",
       "type": "uint32"
     },

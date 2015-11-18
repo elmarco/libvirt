@@ -1740,6 +1740,17 @@ mymain(void)
     DO_TEST("qemu-ns-commandline-ns0", NONE);
     DO_TEST("qemu-ns-commandline-ns1", NONE);
 
+    DO_TEST("video-virtio-gpu-nodevice", QEMU_CAPS_VGA_VIRTIO);
+    DO_TEST("video-virtio-gpu-device", QEMU_CAPS_DEVICE,
+            QEMU_CAPS_DEVICE_VIRTIO_GPU,
+            QEMU_CAPS_DEVICE_VIDEO_PRIMARY);
+    DO_TEST("video-virtio-gpu-virgl", QEMU_CAPS_DEVICE,
+            QEMU_CAPS_DEVICE_VIRTIO_GPU,
+            QEMU_CAPS_DEVICE_VIRTIO_GPU_VIRGL,
+            QEMU_CAPS_SPICE,
+            QEMU_CAPS_SPICE_GL,
+            QEMU_CAPS_DEVICE_VIDEO_PRIMARY);
+
     qemuTestDriverFree(&driver);
 
     return ret == 0 ? EXIT_SUCCESS : EXIT_FAILURE;

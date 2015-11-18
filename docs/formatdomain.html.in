@@ -4979,6 +4979,12 @@ qemu-kvm -net nic,model=? /dev/null
               0.8.8</span>); and <code>usbredir</code>
               (<span class="since">since 0.9.12</span>).
             </p>
+            <p>
+              Spice may provide accelerated server-side rendering with
+              OpenGL. You can enable OpenGL support with
+              <code>gl</code> attribute. It is disabled by default.
+              (<span class="since">since 1.1.22</span>).
+            </p>
             <pre>
   &lt;graphics type='spice' port='-1' tlsPort='-1' autoport='yes'&gt;
     &lt;channel name='main' mode='secure'/&gt;
@@ -5153,8 +5159,9 @@ qemu-kvm -net nic,model=? /dev/null
         <p>
           The <code>model</code> element has a mandatory <code>type</code>
           attribute which takes the value "vga", "cirrus", "vmvga", "xen",
-          "vbox", or "qxl" (<span class="since">since 0.8.6</span>) depending
-          on the hypervisor features available.
+          "vbox", "qxl" (<span class="since">since 0.8.6</span>) or
+          "virtio" (<span class="since">since 1.2.22</span>)
+          depending on the hypervisor features available.
         </p>
         <p>
           You can provide the amount of video memory in kibibytes (blocks of

@@ -325,6 +325,12 @@ typedef enum {
     QEMU_CAPS_DEVICE_VIRTIO_NET, /* -device virtio-net-* */
     QEMU_CAPS_MACH_VIRT_GIC_VERSION, /* -machine virt,gic-version */
 
+    /* 200 */
+    QEMU_CAPS_VGA_VIRTIO, /* The 'virtio' arg for '-vga' */
+    QEMU_CAPS_DEVICE_VIRTIO_GPU, /* -device virtio-gpu-* */
+    QEMU_CAPS_DEVICE_VIRTIO_GPU_VIRGL, /* -device virtio-gpu-*.virgl */
+    QEMU_CAPS_SPICE_GL, /* -spice gl */
+
     QEMU_CAPS_LAST /* this must always be the last item */
 } virQEMUCapsFlags;
 

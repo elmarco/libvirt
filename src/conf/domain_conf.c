@@ -532,7 +532,8 @@ VIR_ENUM_IMPL(virDomainVideo, VIR_DOMAIN_VIDEO_TYPE_LAST,
               "xen",
               "vbox",
               "qxl",
-              "parallels")
+              "parallels",
+              "virtio")
 
 VIR_ENUM_IMPL(virDomainInput, VIR_DOMAIN_INPUT_TYPE_LAST,
               "mouse",
@@ -10917,6 +10918,7 @@ virDomainGraphicsDefParseXML(xmlNodePtr node,
         char *port = virXMLPropString(node, "port");
         char *tlsPort;
         char *autoport;
+        char *gl;
         char *defaultMode;
         int defaultModeVal;
 
@@ -10949,6 +10951,12 @@ virDomainGraphicsDefParseXML(xmlNodePtr node,
             if (STREQ(autoport, "yes"))
                 def->data.spice.autoport = true;
             VIR_FREE(autoport);
+        }
+
+        if ((gl = virXMLPropString(node, "gl")) != NULL) {
+            if (STREQ(gl, "yes"))
+                def->data.spice.gl = true;
+            VIR_FREE(gl);
         }
 
         def->data.spice.defaultMode = VIR_DOMAIN_GRAPHICS_SPICE_CHANNEL_MODE_ANY;
@@ -21189,6 +21197,10 @@ virDomainGraphicsDefFormat(virBufferPtr buf,
         break;
 
     case VIR_DOMAIN_GRAPHICS_TYPE_SPICE:
+        if (def->data.spice.gl)
+            virBufferAsprintf(buf, " gl='%s'",
+                              virTristateBoolTypeToString(def->data.spice.gl));
+
         if (def->data.spice.port)
             virBufferAsprintf(buf, " port='%d'",
                               def->data.spice.port);

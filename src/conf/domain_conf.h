@@ -1374,6 +1374,7 @@ typedef enum {
     VIR_DOMAIN_VIDEO_TYPE_VBOX,
     VIR_DOMAIN_VIDEO_TYPE_QXL,
     VIR_DOMAIN_VIDEO_TYPE_PARALLELS, /* pseudo device for VNC in containers */
+    VIR_DOMAIN_VIDEO_TYPE_VIRTIO,
 
     VIR_DOMAIN_VIDEO_TYPE_LAST
 } virDomainVideoType;
@@ -1578,6 +1579,7 @@ struct _virDomainGraphicsDef {
             int streaming;
             int copypaste; /* enum virTristateBool */
             int filetransfer; /* enum virTristateBool */
+            int gl; /* enum virTristateBool */
         } spice;
     } data;
     /* nListens, listens, and *port are only useful if type is vnc,

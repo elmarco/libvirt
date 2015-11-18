@@ -104,7 +104,8 @@ VIR_ENUM_IMPL(qemuVideo, VIR_DOMAIN_VIDEO_TYPE_LAST,
               "", /* no arg needed for xen */
               "", /* don't support vbox */
               "qxl",
-              "" /* don't support parallels */);
+              "", /* don't support parallels */
+              "virtio");
 
 VIR_ENUM_DECL(qemuDeviceVideo)
 
@@ -115,7 +116,8 @@ VIR_ENUM_IMPL(qemuDeviceVideo, VIR_DOMAIN_VIDEO_TYPE_LAST,
               "", /* no device for xen */
               "", /* don't support vbox */
               "qxl-vga",
-              "" /* don't support parallels */);
+              "", /* don't support parallels */
+              "virtio-vga");
 
 VIR_ENUM_DECL(qemuSoundCodec)
 
@@ -5940,7 +5942,20 @@ qemuBuildDeviceVideoStr(virDomainDefPtr def,
 
     virBufferAsprintf(&buf, "%s,id=%s", model, video->info.alias);
 
-    if (video->type == VIR_DOMAIN_VIDEO_TYPE_QXL) {
+    if (video->type == VIR_DOMAIN_VIDEO_TYPE_VIRTIO) {
+        if (video->accel) {
+            if (video->accel->support3d &&
+                !virQEMUCapsGet(qemuCaps, QEMU_CAPS_DEVICE_VIRTIO_GPU_VIRGL)) {
+                virReportError(VIR_ERR_CONFIG_UNSUPPORTED,
+                               "%s", _("virtio-gpu 3d acceleration is not supported"));
+                goto error;
+            }
+
+            virBufferAsprintf(&buf, ",virgl=%s",
+                              video->accel->support3d ? "on" : "off");
+        }
+
+    } else if (video->type == VIR_DOMAIN_VIDEO_TYPE_QXL) {
         if (video->vram > (UINT_MAX / 1024)) {
             virReportError(VIR_ERR_OVERFLOW,
                            _("value for 'vram' must be less than '%u'"),
@@ -8476,6 +8491,16 @@ qemuBuildGraphicsSPICECommandLine(virQEMUDriverConfigPtr cfg,
         }
     }
 
+    if (graphics->data.spice.gl == VIR_TRISTATE_BOOL_YES) {
+        if (!virQEMUCapsGet(qemuCaps, QEMU_CAPS_SPICE_GL)) {
+            virReportError(VIR_ERR_CONFIG_UNSUPPORTED, "%s",
+                           _("This QEMU can't enable spice OpenGL support"));
+            goto error;
+        } else {
+            virBufferAddLit(&opt, ",gl=on");
+        }
+    }
+
     if (virQEMUCapsGet(qemuCaps, QEMU_CAPS_SEAMLESS_MIGRATION)) {
         /* If qemu supports seamless migration turn it
          * unconditionally on. If migration destination
@@ -10568,8 +10593,10 @@ qemuBuildCommandLine(virConnectPtr conn,
                  virQEMUCapsGet(qemuCaps, QEMU_CAPS_DEVICE_CIRRUS_VGA)) ||
              (primaryVideoType == VIR_DOMAIN_VIDEO_TYPE_VMVGA &&
                  virQEMUCapsGet(qemuCaps, QEMU_CAPS_DEVICE_VMWARE_SVGA)) ||
-             (primaryVideoType == VIR_DOMAIN_VIDEO_TYPE_QXL &&
-                 virQEMUCapsGet(qemuCaps, QEMU_CAPS_DEVICE_QXL_VGA)))
+              (primaryVideoType == VIR_DOMAIN_VIDEO_TYPE_QXL &&
+               virQEMUCapsGet(qemuCaps, QEMU_CAPS_DEVICE_QXL_VGA)) ||
+              (primaryVideoType == VIR_DOMAIN_VIDEO_TYPE_VIRTIO &&
+               virQEMUCapsGet(qemuCaps, QEMU_CAPS_DEVICE_VIRTIO_GPU)))
            ) {
             for (i = 0; i < def->nvideos; i++) {
                 char *str;
@@ -10588,6 +10615,13 @@ qemuBuildCommandLine(virConnectPtr conn,
                     !virQEMUCapsGet(qemuCaps, QEMU_CAPS_VGA_QXL)) {
                     virReportError(VIR_ERR_CONFIG_UNSUPPORTED, "%s",
                                    _("This QEMU does not support QXL graphics adapters"));
+                    goto error;
+                }
+
+                if ((primaryVideoType == VIR_DOMAIN_VIDEO_TYPE_VIRTIO) &&
+                    !virQEMUCapsGet(qemuCaps, QEMU_CAPS_VGA_VIRTIO)) {
+                    virReportError(VIR_ERR_CONFIG_UNSUPPORTED, "%s",
+                                   _("This QEMU does not support virtio graphics adapters"));
                     goto error;
                 }
 

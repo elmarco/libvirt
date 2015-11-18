@@ -299,6 +299,11 @@ VIR_ENUM_IMPL(virQEMUCaps, QEMU_CAPS_LAST,
               "e1000",
               "virtio-net",
               "gic-version",
+
+              "vga-virtio", /* 200 */
+              "virtio-gpu",
+              "virtio-gpu.virgl",
+              "spice-gl",
     );
 
 
@@ -1115,6 +1120,8 @@ virQEMUCapsComputeCmdFlags(const char *help,
         const char *nl = strstr(p, "\n");
         if (strstr(p, "|qxl"))
             virQEMUCapsSet(qemuCaps, QEMU_CAPS_VGA_QXL);
+        if (strstr(p, "|virtio"))
+            virQEMUCapsSet(qemuCaps, QEMU_CAPS_VGA_VIRTIO);
         if ((p = strstr(p, "|none")) && p < nl)
             virQEMUCapsSet(qemuCaps, QEMU_CAPS_VGA_NONE);
     }
@@ -1540,6 +1547,8 @@ struct virQEMUCapsStringFlags virQEMUCapsObjectTypes[] = {
     { "virtio-net-ccw", QEMU_CAPS_DEVICE_VIRTIO_NET },
     { "virtio-net-s390", QEMU_CAPS_DEVICE_VIRTIO_NET },
     { "virtio-net-device", QEMU_CAPS_DEVICE_VIRTIO_NET },
+    { "virtio-gpu-pci", QEMU_CAPS_DEVICE_VIRTIO_GPU },
+    { "virtio-gpu-device", QEMU_CAPS_DEVICE_VIRTIO_GPU },
 };
 
 static struct virQEMUCapsStringFlags virQEMUCapsObjectPropsVirtioBlk[] = {
@@ -1625,6 +1634,10 @@ static struct virQEMUCapsStringFlags virQEMUCapsObjectPropsQxlVga[] = {
     { "vgamem_mb", QEMU_CAPS_QXL_VGA_VGAMEM },
 };
 
+static struct virQEMUCapsStringFlags virQEMUCapsObjectPropsVirtioGpu[] = {
+    { "virgl", QEMU_CAPS_DEVICE_VIRTIO_GPU_VIRGL },
+};
+
 struct virQEMUCapsObjectTypeProps {
     const char *type;
     struct virQEMUCapsStringFlags *props;
@@ -1678,6 +1691,8 @@ static struct virQEMUCapsObjectTypeProps virQEMUCapsObjectProps[] = {
       ARRAY_CARDINALITY(virQEMUCapsObjectPropsQxl) },
     { "qxl-vga", virQEMUCapsObjectPropsQxlVga,
       ARRAY_CARDINALITY(virQEMUCapsObjectPropsQxlVga) },
+    { "virtio-gpu-pci", virQEMUCapsObjectPropsVirtioGpu,
+      ARRAY_CARDINALITY(virQEMUCapsObjectPropsVirtioGpu) },
 };
 
 
@@ -1875,6 +1890,7 @@ virQEMUCapsExtractDeviceStr(const char *qemu,
                          "-device", "vmware-svga,?",
                          "-device", "qxl,?",
                          "-device", "qxl-vga,?",
+                         "-device", "virtio-gpu-pci,?",
                          NULL);
     /* qemu -help goes to stdout, but qemu -device ? goes to stderr.  */
     virCommandSetErrorBuffer(cmd, &output);
@@ -2396,6 +2412,9 @@ virQEMUCapsProbeQMPObjects(virQEMUCapsPtr qemuCaps,
     /* If qemu supports newer -device qxl it supports -vga qxl as well */
     if (virQEMUCapsGet(qemuCaps, QEMU_CAPS_DEVICE_QXL))
         virQEMUCapsSet(qemuCaps, QEMU_CAPS_VGA_QXL);
+    /* If qemu supports newer -device virtio-gpu-pci it supports -vga virtio as well */
+    if (virQEMUCapsGet(qemuCaps, QEMU_CAPS_DEVICE_VIRTIO_GPU))
+        virQEMUCapsSet(qemuCaps, QEMU_CAPS_VGA_VIRTIO);
 
     return 0;
 }
@@ -2574,6 +2593,7 @@ static struct virQEMUCapsCommandLineProps virQEMUCapsCommandLine[] = {
     { "drive", "throttling.bps-total-max", QEMU_CAPS_DRIVE_IOTUNE_MAX},
     { "machine", "aes-key-wrap", QEMU_CAPS_AES_KEY_WRAP },
     { "machine", "dea-key-wrap", QEMU_CAPS_DEA_KEY_WRAP },
+    { "spice", "gl", QEMU_CAPS_SPICE_GL },
 };
 
 static int
