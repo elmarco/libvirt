@@ -12657,7 +12657,7 @@ virDomainSmartcardDefParseXML(virDomainXMLOptionPtr xmlopt,
  * or like this:
  *
  * <tpm model='tpm-tis'>
- *   <backend type='emulator'/>
+ *   <backend type='emulator' version='2'/>
  * </tpm>
  */
 static virDomainTPMDefPtr
@@ -12670,6 +12670,7 @@ virDomainTPMDefParseXML(virDomainXMLOptionPtr xmlopt,
     char *path = NULL;
     char *model = NULL;
     char *backend = NULL;
+    char *version = NULL;
     virDomainTPMDefPtr def;
     xmlNodePtr save = ctxt->node;
     xmlNodePtr *backends = NULL;
@@ -12716,6 +12717,20 @@ virDomainTPMDefParseXML(virDomainXMLOptionPtr xmlopt,
         goto error;
     }
 
+    version = virXMLPropString(backends[0], "version");
+    if (!version || STREQ(version, "1.2")) {
+        def->version = VIR_DOMAIN_TPM_VERSION_1_2;
+        /* only TIS available for emulator */
+        if (def->type == VIR_DOMAIN_TPM_TYPE_EMULATOR)
+            def->model = VIR_DOMAIN_TPM_MODEL_TIS;
+    } else if (STREQ(version, "2")) {
+        def->version = VIR_DOMAIN_TPM_VERSION_2;
+    } else {
+        virReportError(VIR_ERR_CONFIG_UNSUPPORTED,
+                       _("Unsupported TPM version '%s'"),
+                       version);
+    }
+
     switch (def->type) {
     case VIR_DOMAIN_TPM_TYPE_PASSTHROUGH:
         path = virXPathString("string(./backend/device/@path)", ctxt);
@@ -12740,6 +12755,7 @@ virDomainTPMDefParseXML(virDomainXMLOptionPtr xmlopt,
     VIR_FREE(model);
     VIR_FREE(backend);
     VIR_FREE(backends);
+    VIR_FREE(version);
     ctxt->node = save;
     return def;
 
@@ -21836,6 +21852,12 @@ virDomainTPMDefCheckABIStability(virDomainTPMDefPtr src,
         return false;
     }
 
+    if (src->version != dst->version) {
+        virReportError(VIR_ERR_CONFIG_UNSUPPORTED, "%s",
+                       _("Target TPM version doesn't match source"));
+        return false;
+    }
+
     return virDomainDeviceInfoCheckABIStability(&src->info, &dst->info);
 }
 
@@ -24940,6 +24962,9 @@ virDomainTPMDefFormat(virBufferPtr buf,
     virBufferAdjustIndent(buf, 2);
     virBufferAsprintf(buf, "<backend type='%s'",
                       virDomainTPMBackendTypeToString(def->type));
+
+    if (def->version == VIR_DOMAIN_TPM_VERSION_2)
+        virBufferAddLit(buf, " version='2'");
 
     switch (def->type) {
     case VIR_DOMAIN_TPM_TYPE_PASSTHROUGH:
