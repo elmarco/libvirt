@@ -861,7 +861,8 @@ VIR_ENUM_IMPL(virDomainRNGBackend,
 
 VIR_ENUM_IMPL(virDomainTPMModel, VIR_DOMAIN_TPM_MODEL_LAST,
               "tpm-tis",
-              "tpm-crb")
+              "tpm-crb",
+              "tpm-spapr")
 
 VIR_ENUM_IMPL(virDomainTPMBackend, VIR_DOMAIN_TPM_TYPE_LAST,
               "passthrough",
@@ -12664,7 +12665,8 @@ static virDomainTPMDefPtr
 virDomainTPMDefParseXML(virDomainXMLOptionPtr xmlopt,
                         xmlNodePtr node,
                         xmlXPathContextPtr ctxt,
-                        unsigned int flags)
+                        unsigned int flags,
+                        virArch arch)
 {
     char *type = NULL;
     char *path = NULL;
@@ -12680,11 +12682,17 @@ virDomainTPMDefParseXML(virDomainXMLOptionPtr xmlopt,
         return NULL;
 
     model = virXMLPropString(node, "model");
-    if (model != NULL &&
-        (int)(def->model = virDomainTPMModelTypeFromString(model)) < 0) {
-        virReportError(VIR_ERR_CONFIG_UNSUPPORTED,
-                       _("Unknown TPM frontend model '%s'"), model);
-        goto error;
+    if (model != NULL) {
+        if ((int)(def->model = virDomainTPMModelTypeFromString(model)) < 0) {
+            virReportError(VIR_ERR_CONFIG_UNSUPPORTED,
+                           _("Unknown TPM frontend model '%s'"), model);
+            goto error;
+        }
+    } else {
+        if (ARCH_IS_PPC64(arch))
+            def->model = VIR_DOMAIN_TPM_MODEL_SPAPR;
+        else
+            def->model = VIR_DOMAIN_TPM_MODEL_TIS;
     }
 
     ctxt->node = node;
@@ -12720,8 +12728,9 @@ virDomainTPMDefParseXML(virDomainXMLOptionPtr xmlopt,
     version = virXMLPropString(backends[0], "version");
     if (!version || STREQ(version, "1.2")) {
         def->version = VIR_DOMAIN_TPM_VERSION_1_2;
-        /* only TIS available for emulator */
-        if (def->type == VIR_DOMAIN_TPM_TYPE_EMULATOR)
+        /* only TIS available for emulator (non ppc64 case) */
+        if (def->type == VIR_DOMAIN_TPM_TYPE_EMULATOR &&
+            !ARCH_IS_PPC64(arch))
             def->model = VIR_DOMAIN_TPM_MODEL_TIS;
     } else if (STREQ(version, "2")) {
         def->version = VIR_DOMAIN_TPM_VERSION_2;
@@ -16013,7 +16022,8 @@ virDomainDeviceDefParse(const char *xmlStr,
             goto error;
         break;
     case VIR_DOMAIN_DEVICE_TPM:
-        if (!(dev->data.tpm = virDomainTPMDefParseXML(xmlopt, node, ctxt, flags)))
+        if (!(dev->data.tpm = virDomainTPMDefParseXML(xmlopt, node, ctxt, flags,
+                                                      def->os.arch)))
             goto error;
         break;
     case VIR_DOMAIN_DEVICE_PANIC:
@@ -20284,7 +20294,8 @@ virDomainDefParseXML(xmlDocPtr xml,
     }
 
     if (n > 0) {
-        if (!(def->tpm = virDomainTPMDefParseXML(xmlopt, nodes[0], ctxt, flags)))
+        if (!(def->tpm = virDomainTPMDefParseXML(xmlopt, nodes[0], ctxt, flags,
+                                                 def->os.arch)))
             goto error;
     }
     VIR_FREE(nodes);
