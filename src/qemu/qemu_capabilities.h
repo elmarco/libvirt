@@ -472,6 +472,7 @@ typedef enum { /* virQEMUCapsFlags grouping marker for syntax-check */
     QEMU_CAPS_SDL_GL, /* -sdl gl */
     QEMU_CAPS_SCREENDUMP_DEVICE, /* screendump command accepts device & head */
     QEMU_CAPS_DEVICE_TPM_EMULATOR, /* -tpmdev emulator */
+    QEMU_CAPS_DEVICE_TPM_SPAPR, /* -device tpm-spapr */
 
     QEMU_CAPS_LAST /* this must always be the last item */
 } virQEMUCapsFlags;
