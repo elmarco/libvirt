@@ -1233,6 +1233,18 @@ virCommandSetAppArmorProfile(virCommandPtr cmd,
 }
 
 
+void
+virCommandClearAppArmorProfile(virCommandPtr cmd)
+{
+    if (!cmd || cmd->has_error)
+        return;
+
+#if defined(WITH_SECDRIVER_APPARMOR)
+    VIR_FREE(cmd->appArmorProfile);
+#endif
+}
+
+
 /**
  * virCommandDaemonize:
  * @cmd: the command to modify

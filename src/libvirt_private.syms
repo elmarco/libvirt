@@ -1573,6 +1573,7 @@ virCommandAddEnvPassBlockSUID;
 virCommandAddEnvPassCommon;
 virCommandAddEnvString;
 virCommandAllowCap;
+virCommandClearAppArmorProfile;
 virCommandClearCaps;
 virCommandDaemonize;
 virCommandDoAsyncIO;

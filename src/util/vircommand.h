@@ -92,6 +92,7 @@ void virCommandSetSELinuxLabel(virCommandPtr cmd,
 
 void virCommandSetAppArmorProfile(virCommandPtr cmd,
                                   const char *profile);
+void virCommandClearAppArmorProfile(virCommandPtr cmd);
 
 void virCommandDaemonize(virCommandPtr cmd);
 
