@@ -126,4 +126,13 @@
 
    /usr/{lib,lib64,lib/qemu,libexec}/qemu-bridge-helper rmix,
   }
+  /usr/bin/swtpm Cx -> usr_bin_swtpm,
+  profile usr_bin_swtpm flags=(complain) {
+    #include <abstractions/base>
+
+    /run/libvirt/qemu/swtpm/*-swtpm.pid rw,
+    /run/libvirt/qemu/swtpm/*-swtpm.sock w,
+    /var/log/swtpm/libvirt/qemu/*-swtpm.log w,
+    /var/lib/libvirt/swtpm/[0-9a-f]*-[0-9a-f]*-[0-9a-f]*-[0-9a-f]*-[0-9a-f]*/{tpm1.2,tpm2}/{tpm,tpm2}-00.permall rw,
+  }
 }
