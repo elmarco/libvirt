@@ -470,6 +470,8 @@ qemuSecurityStartTPMEmulator(virQEMUDriverPtr driver,
     /* make sure we run this with the appropriate user */
     virCommandSetUID(cmd, uid);
     virCommandSetGID(cmd, gid);
+    /* use libvirtd's AppArmor profile */
+    virCommandClearAppArmorProfile(cmd);
 
     *cmdret = virCommandRun(cmd, exitstatus);
 
