@@ -486,7 +486,6 @@ qemuTPMEmulatorPrepareHost(virDomainTPMDefPtr tpm,
  * @storagepath: path to the directory for TPM state
  * @vmname: the name of the VM
  * @vmuuid: the UUID of the VM
- * @privileged: whether we are running in privileged mode
  * @swtpm_user: The userid to switch to when setting up the TPM;
  *              typically this should be the uid of 'tss' or 'root'
  * @swtpm_group: The group id to switch to
@@ -500,7 +499,6 @@ static int
 qemuTPMEmulatorRunSetup(const char *storagepath,
                         const char *vmname,
                         const unsigned char *vmuuid,
-                        bool privileged,
                         uid_t swtpm_user,
                         gid_t swtpm_group,
                         const char *logfile)
@@ -510,12 +508,6 @@ qemuTPMEmulatorRunSetup(const char *storagepath,
     int ret = -1;
     char uuid[VIR_UUID_STRING_BUFLEN];
     char *vmid = NULL;
-
-    if (!privileged)
-        return virFileWriteStr(logfile,
-                               _("Did not create EK and certificates since "
-                               "this requires privileged mode\n"),
-                               0600);
 
     cmd = virCommandNew(swtpm_setup);
     if (!cmd)
@@ -565,7 +557,6 @@ qemuTPMEmulatorRunSetup(const char *storagepath,
  * @tpm: TPM definition
  * @vmname: The name of the VM
  * @vmuuid: The UUID of the VM
- * @privileged: whether we are running in privileged mode
  * @swtpm_user: The uid for the swtpm to run as (drop privileges to from root)
  * @swtpm_group: The gid for the swtpm to run as
  * @swtpmStateDir: the directory where swtpm writes the pid file and creates the
@@ -580,7 +571,6 @@ static virCommandPtr
 qemuTPMEmulatorBuildCommand(virDomainTPMDefPtr tpm,
                             const char *vmname,
                             const unsigned char *vmuuid,
-                            bool privileged,
                             uid_t swtpm_user,
                             gid_t swtpm_group,
                             const char *swtpmStateDir,
@@ -596,7 +586,7 @@ qemuTPMEmulatorBuildCommand(virDomainTPMDefPtr tpm,
 
     if (created &&
         qemuTPMEmulatorRunSetup(tpm->data.emulator.storagepath, vmname, vmuuid,
-                                privileged, swtpm_user, swtpm_group,
+                                swtpm_user, swtpm_group,
                                 tpm->data.emulator.logfile) < 0)
         goto error;
 
@@ -800,7 +790,6 @@ qemuExtTPMStartEmulator(virQEMUDriverPtr driver,
     qemuTPMEmulatorStop(cfg->swtpmStateDir, shortName);
 
     if (!(cmd = qemuTPMEmulatorBuildCommand(tpm, def->name, def->uuid,
-                                            driver->privileged,
                                             cfg->swtpm_user,
                                             cfg->swtpm_group,
                                             cfg->swtpmStateDir, shortName)))
