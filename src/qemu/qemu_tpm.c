@@ -501,6 +501,7 @@ qemuTPMEmulatorRunSetup(const char *storagepath,
                         const unsigned char *vmuuid,
                         uid_t swtpm_user,
                         gid_t swtpm_group,
+                        virDomainTPMVersion version,
                         const char *logfile)
 {
     virCommandPtr cmd = NULL;
@@ -530,6 +531,9 @@ qemuTPMEmulatorRunSetup(const char *storagepath,
                          "--lock-nvram",
                          "--not-overwrite",
                          NULL);
+
+    if (version == VIR_DOMAIN_TPM_VERSION_2)
+        virCommandAddArg(cmd, "--tpm2");
 
     virCommandClearCaps(cmd);
 
@@ -586,7 +590,7 @@ qemuTPMEmulatorBuildCommand(virDomainTPMDefPtr tpm,
 
     if (created &&
         qemuTPMEmulatorRunSetup(tpm->data.emulator.storagepath, vmname, vmuuid,
-                                swtpm_user, swtpm_group,
+                                swtpm_user, swtpm_group, tpm->version,
                                 tpm->data.emulator.logfile) < 0)
         goto error;
 
