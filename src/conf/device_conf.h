@@ -175,6 +175,7 @@ struct _virDomainDeviceInfo {
      * cases we might want to prevent that from happening by
      * locking the isolation group */
     bool isolationGroupLocked;
+    int vhost_user_fd;
 };
 
 int virDomainDeviceInfoCopy(virDomainDeviceInfoPtr dst,
