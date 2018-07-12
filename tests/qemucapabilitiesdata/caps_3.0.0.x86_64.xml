@@ -213,6 +213,7 @@
   <flag name='usb-storage.werror'/>
   <flag name='egl-headless'/>
   <flag name='vfio-pci.display'/>
+  <flag name='memory-backend-memfd'/>
   <version>3000000</version>
   <kvmVersion>0</kvmVersion>
   <microcodeVersion>427391</microcodeVersion>
