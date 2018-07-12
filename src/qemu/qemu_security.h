@@ -84,6 +84,12 @@ int qemuSecurityRestoreChardevLabel(virQEMUDriverPtr driver,
                                     virDomainObjPtr vm,
                                     virDomainChrDefPtr chr);
 
+int qemuSecurityStartVhostUserGPU(virQEMUDriverPtr driver,
+                                  virDomainDefPtr def,
+                                  virCommandPtr cmd,
+                                  int *exitstatus,
+                                  int *cmdret);
+
 int qemuSecurityStartTPMEmulator(virQEMUDriverPtr driver,
                                  virDomainDefPtr def,
                                  virCommandPtr cmd,

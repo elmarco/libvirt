@@ -427,6 +427,54 @@ qemuSecurityRestoreChardevLabel(virQEMUDriverPtr driver,
 
 
 /*
+ * qemuSecurityStartVhostUserGPU:
+ *
+ * @driver: the QEMU driver
+ * @def: the domain definition
+ * @cmd: the command to run
+ * @existstatus: pointer to int returning exit status of process
+ * @cmdret: pointer to int returning result of virCommandRun
+ *
+ * Start the vhost-user-gpu process with approriate labels.
+ * This function returns -1 on security setup error, 0 if all the
+ * setup was done properly. In case the virCommand failed to run
+ * 0 is returned but cmdret is set appropriately with the process
+ * exitstatus also set.
+ */
+int
+qemuSecurityStartVhostUserGPU(virQEMUDriverPtr driver,
+                              virDomainDefPtr def,
+                              virCommandPtr cmd,
+                              int *exitstatus,
+                              int *cmdret)
+{
+    int ret = -1;
+
+    if (virSecurityManagerSetChildProcessLabel(driver->securityManager,
+                                               def, cmd) < 0)
+        goto cleanup;
+
+    if (virSecurityManagerPreFork(driver->securityManager) < 0)
+        goto cleanup;
+
+    ret = 0;
+
+    *cmdret = virCommandRun(cmd, exitstatus);
+
+    virSecurityManagerPostFork(driver->securityManager);
+
+    if (*cmdret < 0)
+        goto cleanup;
+
+    return 0;
+
+cleanup:
+
+    return ret;
+}
+
+
+/*
  * qemuSecurityStartTPMEmulator:
  *
  * @driver: the QEMU driver
