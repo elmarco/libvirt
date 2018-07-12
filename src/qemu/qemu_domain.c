@@ -4620,7 +4620,8 @@ qemuDomainDeviceDefValidateVideo(const virDomainVideoDef *video)
 
     if (!video->primary &&
         video->type != VIR_DOMAIN_VIDEO_TYPE_QXL &&
-        video->type != VIR_DOMAIN_VIDEO_TYPE_VIRTIO) {
+        video->type != VIR_DOMAIN_VIDEO_TYPE_VIRTIO &&
+        video->type != VIR_DOMAIN_VIDEO_TYPE_VHOST_USER) {
         virReportError(VIR_ERR_CONFIG_UNSUPPORTED,
                        _("video type '%s' is only valid as primary "
                          "video device"),
