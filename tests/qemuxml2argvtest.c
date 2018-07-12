@@ -3008,6 +3008,18 @@ mymain(void)
     DO_TEST("riscv64-virt",
             QEMU_CAPS_DEVICE_VIRTIO_MMIO);
 
+    DO_TEST("vhost-user-vga",
+            QEMU_CAPS_OBJECT_MEMORY_MEMFD,
+            QEMU_CAPS_DEVICE_VIDEO_PRIMARY,
+            QEMU_CAPS_DEVICE_VHOST_USER_GPU,
+            QEMU_CAPS_DEVICE_VHOST_USER_VGA);
+
+    DO_TEST("vhost-user-gpu-secondary",
+            QEMU_CAPS_OBJECT_MEMORY_MEMFD,
+            QEMU_CAPS_DEVICE_VIDEO_PRIMARY,
+            QEMU_CAPS_DEVICE_VHOST_USER_GPU,
+            QEMU_CAPS_DEVICE_VHOST_USER_VGA);
+
     if (getenv("LIBVIRT_SKIP_CLEANUP") == NULL)
         virFileDeleteTree(fakerootdir);
 
