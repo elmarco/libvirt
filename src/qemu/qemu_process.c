@@ -5025,6 +5025,8 @@ qemuProcessStartValidateVideo(virDomainObjPtr vm,
              !virQEMUCapsGet(qemuCaps, QEMU_CAPS_DEVICE_QXL)) ||
             (video->type == VIR_DOMAIN_VIDEO_TYPE_VIRTIO &&
              !virQEMUCapsGet(qemuCaps, QEMU_CAPS_DEVICE_VIRTIO_GPU)) ||
+            (video->type == VIR_DOMAIN_VIDEO_TYPE_VHOST_USER &&
+             !virQEMUCapsGet(qemuCaps, QEMU_CAPS_DEVICE_VHOST_USER_GPU)) ||
             (video->type == VIR_DOMAIN_VIDEO_TYPE_VIRTIO &&
              video->info.type == VIR_DOMAIN_DEVICE_ADDRESS_TYPE_CCW &&
              !virQEMUCapsGet(qemuCaps, QEMU_CAPS_DEVICE_VIRTIO_GPU_CCW))) {
@@ -5035,7 +5037,9 @@ qemuProcessStartValidateVideo(virDomainObjPtr vm,
         }
 
         if (video->accel) {
-            if (video->accel->accel3d == VIR_TRISTATE_SWITCH_ON &&
+            if (video->type == VIR_DOMAIN_VIDEO_TYPE_VHOST_USER) {
+                continue;
+            } else if (video->accel->accel3d == VIR_TRISTATE_SWITCH_ON &&
                 (video->type != VIR_DOMAIN_VIDEO_TYPE_VIRTIO ||
                  !virQEMUCapsGet(qemuCaps, QEMU_CAPS_VIRTIO_GPU_VIRGL))) {
                 virReportError(VIR_ERR_CONFIG_UNSUPPORTED,
