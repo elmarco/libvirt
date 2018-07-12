@@ -509,6 +509,8 @@ VIR_ENUM_IMPL(virQEMUCaps, QEMU_CAPS_LAST,
               "vfio-pci.display",
               "blockdev",
               "memory-backend-memfd",
+              "vhost-user-gpu",
+              "vhost-user-vga",
     );
 
 
@@ -1150,6 +1152,8 @@ struct virQEMUCapsStringFlags virQEMUCapsObjectTypes[] = {
     { "mch", QEMU_CAPS_DEVICE_MCH },
     { "sev-guest", QEMU_CAPS_SEV_GUEST },
     { "memory-backend-memfd", QEMU_CAPS_OBJECT_MEMORY_MEMFD },
+    { "vhost-user-gpu", QEMU_CAPS_DEVICE_VHOST_USER_GPU },
+    { "vhost-user-vga", QEMU_CAPS_DEVICE_VHOST_USER_VGA },
 };
 
 static struct virQEMUCapsStringFlags virQEMUCapsDevicePropsVirtioBalloon[] = {

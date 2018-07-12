@@ -493,6 +493,8 @@ typedef enum { /* virQEMUCapsFlags grouping marker for syntax-check */
     QEMU_CAPS_VFIO_PCI_DISPLAY, /* -device vfio-pci.display */
     QEMU_CAPS_BLOCKDEV, /* -blockdev and blockdev-add are supported */
     QEMU_CAPS_OBJECT_MEMORY_MEMFD, /* -object memory-backend-memfd */
+    QEMU_CAPS_DEVICE_VHOST_USER_GPU, /* -device vhost-user-gpu */
+    QEMU_CAPS_DEVICE_VHOST_USER_VGA, /* -device vhost-user-vga */
 
     QEMU_CAPS_LAST /* this must always be the last item */
 } virQEMUCapsFlags;
