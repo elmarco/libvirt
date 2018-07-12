@@ -3495,6 +3495,7 @@
                 <value>virtio</value>
                 <value>gop</value>
                 <value>none</value>
+                <value>vhost-user</value>
               </choice>
             </attribute>
             <group>

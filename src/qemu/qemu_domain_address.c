@@ -815,6 +815,7 @@ qemuDomainDeviceCalculatePCIConnectFlags(virDomainDeviceDefPtr dev,
     case VIR_DOMAIN_DEVICE_VIDEO:
         switch ((virDomainVideoType)dev->data.video->type) {
         case VIR_DOMAIN_VIDEO_TYPE_VIRTIO:
+        case VIR_DOMAIN_VIDEO_TYPE_VHOST_USER:
             return virtioFlags;
 
         case VIR_DOMAIN_VIDEO_TYPE_VGA:
