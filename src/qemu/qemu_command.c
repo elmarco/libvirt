@@ -4577,12 +4577,62 @@ qemuBuildVgaVideoCommand(virCommandPtr cmd,
 }
 
 
+static char *
+qemuBuildVhostUserBackendStr(virDomainVideoDefPtr video,
+                             virCommandPtr cmd,
+                             char **chardev)
+{
+    virBuffer buf = VIR_BUFFER_INITIALIZER;
+
+    if (virAsprintf(chardev, "socket,id=chr-vu-%s,fd=%d",
+                    video->info.alias, video->info.vhost_user_fd) < 0)
+        goto error;
+
+    virCommandPassFD(cmd, video->info.vhost_user_fd,
+                     VIR_COMMAND_PASS_FD_CLOSE_PARENT);
+
+    video->info.vhost_user_fd = -1;
+
+    virBufferAsprintf(&buf, "vhost-user-backend,id=vu-%s,chardev=chr-vu-%s",
+                      video->info.alias, video->info.alias);
+
+    if (virBufferCheckError(&buf) < 0)
+        goto error;
+
+    return virBufferContentAndReset(&buf);
+
+error:
+    VIR_FREE(*chardev);
+    virBufferFreeAndReset(&buf);
+    return NULL;
+
+}
+
+
 static int
 qemuBuildVideoCommandLine(virCommandPtr cmd,
                           const virDomainDef *def,
                           virQEMUCapsPtr qemuCaps)
 {
     size_t i;
+
+    for (i = 0; i < def->nvideos; i++) {
+        char *optstr;
+        char *chardev = NULL;
+        virDomainVideoDefPtr video = def->videos[i];
+
+        if (video->type == VIR_DOMAIN_VIDEO_TYPE_VHOST_USER) {
+
+            if (!(optstr = qemuBuildVhostUserBackendStr(video, cmd, &chardev)))
+                return -1;
+
+            virCommandAddArgList(cmd, "-chardev", chardev, NULL);
+            virCommandAddArgList(cmd, "-object", optstr, NULL);
+
+            VIR_FREE(optstr);
+            VIR_FREE(chardev);
+        }
+    }
 
     for (i = 0; i < def->nvideos; i++) {
         char *str = NULL;
