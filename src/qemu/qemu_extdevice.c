@@ -25,6 +25,7 @@
 #include "qemu_extdevice.h"
 #include "qemu_domain.h"
 #include "qemu_tpm.h"
+#include "qemu_vhost_user_gpu.h"
 
 #include "viralloc.h"
 #include "virlog.h"
@@ -132,10 +133,20 @@ qemuExtDevicesStart(virQEMUDriverPtr driver,
                     virDomainDefPtr def,
                     qemuDomainLogContextPtr logCtxt)
 {
-    int ret = 0;
+    int i, ret = 0;
 
     if (qemuExtDevicesInitPaths(driver, def) < 0)
         return -1;
+
+    for (i = 0; i < def->nvideos; i++) {
+        virDomainVideoDefPtr video = def->videos[i];
+
+        if (video->type == VIR_DOMAIN_VIDEO_TYPE_VHOST_USER) {
+            ret = qemuExtVhostUserGPUStart(driver, def, video, logCtxt);
+            if (ret < 0)
+                return ret;
+        }
+    }
 
     if (def->tpm)
         ret = qemuExtTPMStart(driver, def, logCtxt);
@@ -148,8 +159,18 @@ void
 qemuExtDevicesStop(virQEMUDriverPtr driver,
                    virDomainDefPtr def)
 {
+    int i;
+
     if (qemuExtDevicesInitPaths(driver, def) < 0)
         return;
+
+    for (i = 0; i < def->nvideos; i++) {
+        virDomainVideoDefPtr video = def->videos[i];
+
+        if (video->type == VIR_DOMAIN_VIDEO_TYPE_VHOST_USER) {
+            qemuExtVhostUserGPUStop(driver, def, video);
+        }
+    }
 
     if (def->tpm)
         qemuExtTPMStop(driver, def);
@@ -159,6 +180,13 @@ qemuExtDevicesStop(virQEMUDriverPtr driver,
 bool
 qemuExtDevicesHasDevice(virDomainDefPtr def)
 {
+    int i;
+
+    for (i = 0; i < def->nvideos; i++) {
+        if (def->videos[i]->type == VIR_DOMAIN_VIDEO_TYPE_VHOST_USER)
+            return true;
+    }
+
     if (def->tpm && def->tpm->type == VIR_DOMAIN_TPM_TYPE_EMULATOR)
         return true;
 
@@ -171,10 +199,19 @@ qemuExtDevicesSetupCgroup(virQEMUDriverPtr driver,
                           virDomainDefPtr def,
                           virCgroupPtr cgroup)
 {
-    int ret = 0;
+    int i;
 
-    if (def->tpm)
-        ret = qemuExtTPMSetupCgroup(driver, def, cgroup);
+    for (i = 0; i < def->nvideos; i++) {
+        virDomainVideoDefPtr video = def->videos[i];
 
-    return ret;
+        if (video->type == VIR_DOMAIN_VIDEO_TYPE_VHOST_USER &&
+            qemuExtVhostUserGPUSetupCgroup(driver, def, video, cgroup) < 0)
+            return -1;
+    }
+
+    if (def->tpm &&
+        qemuExtTPMSetupCgroup(driver, def, cgroup) < 0)
+        return -1;
+
+    return 0;
 }
