@@ -4421,7 +4421,7 @@ qemuBuildDeviceVideoStr(const virDomainDef *def,
         goto error;
     }
 
-    if (STREQ(model, "virtio-gpu")) {
+    if (STREQ(model, "virtio-gpu") || STREQ(model, "vhost-user-gpu")) {
         if (video->info.type == VIR_DOMAIN_DEVICE_ADDRESS_TYPE_CCW)
             virBufferAsprintf(&buf, "%s-ccw", model);
         else
@@ -4469,6 +4469,10 @@ qemuBuildDeviceVideoStr(const virDomainDef *def,
             if (video->heads)
                 virBufferAsprintf(&buf, ",max_outputs=%u", video->heads);
         }
+    } else if (video->type == VIR_DOMAIN_VIDEO_TYPE_VHOST_USER) {
+        if (video->heads)
+            virBufferAsprintf(&buf, ",max_outputs=%u", video->heads);
+        virBufferAsprintf(&buf, ",vhost-user=vu-%s", video->info.alias);
     } else if (video->vram &&
         ((video->type == VIR_DOMAIN_VIDEO_TYPE_VGA &&
           virQEMUCapsGet(qemuCaps, QEMU_CAPS_VGA_VGAMEM)) ||
