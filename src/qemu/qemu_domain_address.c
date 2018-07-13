@@ -330,7 +330,8 @@ qemuDomainPrimeVirtioDeviceAddresses(virDomainDefPtr def,
         virDomainVideoDefPtr video = def->videos[i];
 
         if (video->info.type == VIR_DOMAIN_DEVICE_ADDRESS_TYPE_NONE &&
-            video->type == VIR_DOMAIN_VIDEO_TYPE_VIRTIO)
+            (video->type == VIR_DOMAIN_VIDEO_TYPE_VIRTIO ||
+             video->type == VIR_DOMAIN_VIDEO_TYPE_VHOST_USER))
             video->info.type = type;
     }
 
