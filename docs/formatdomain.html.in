@@ -1099,7 +1099,7 @@
     &lt;/hugepages&gt;
     &lt;nosharepages/&gt;
     &lt;locked/&gt;
-    &lt;source type="file|anonymous"/&gt;
+    &lt;source type="file|anonymous|memfd"/&gt;
     &lt;access mode="shared|private"/&gt;
     &lt;allocation mode="immediate|ondemand"/&gt;
     &lt;discard/&gt;
@@ -1150,8 +1150,10 @@
         suitable for the specific environment at the same time to mitigate
         the risks described above. <span class="since">Since 1.0.6</span></dd>
        <dt><code>source</code></dt>
-       <dd>In this attribute you can switch to file memorybacking or keep
-         default anonymous.</dd>
+       <dd>In this attribute you can switch to file memorybacking or
+       keep default anonymous. <span class="since">Since 4.8.0</span>,
+       you may choose <code>memfd</code> backing. (QEMU/KVM only)
+       </dd>
        <dt><code>access</code></dt>
        <dd>Specify if memory is shared or private. This can be overridden per
          numa node by <code>memAccess</code></dd>

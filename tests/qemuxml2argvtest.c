@@ -2921,6 +2921,9 @@ mymain(void)
     DO_TEST("fd-memory-no-numa-topology", QEMU_CAPS_OBJECT_MEMORY_FILE,
             QEMU_CAPS_KVM);
 
+    DO_TEST("memfd-memory-numa", QEMU_CAPS_OBJECT_MEMORY_MEMFD,
+            QEMU_CAPS_KVM);
+
     DO_TEST("cpu-check-none", QEMU_CAPS_KVM);
     DO_TEST("cpu-check-partial", QEMU_CAPS_KVM);
     DO_TEST("cpu-check-full", QEMU_CAPS_KVM);
