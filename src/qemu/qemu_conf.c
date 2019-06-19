@@ -286,6 +286,7 @@ virQEMUDriverConfigPtr virQEMUDriverConfigNew(bool privileged)
 
     if (VIR_STRDUP(cfg->bridgeHelperName, QEMU_BRIDGE_HELPER) < 0 ||
         VIR_STRDUP(cfg->prHelperName, QEMU_PR_HELPER) < 0 ||
+        VIR_STRDUP(cfg->slirpHelperName, QEMU_SLIRP_HELPER) < 0 ||
         VIR_STRDUP(cfg->dbusDaemonName, QEMU_DBUS_DAEMON) < 0)
         goto error;
 
@@ -377,6 +378,7 @@ static void virQEMUDriverConfigDispose(void *obj)
     VIR_FREE(cfg->hugetlbfs);
     VIR_FREE(cfg->bridgeHelperName);
     VIR_FREE(cfg->prHelperName);
+    VIR_FREE(cfg->slirpHelperName);
     VIR_FREE(cfg->dbusDaemonName);
 
     VIR_FREE(cfg->saveImageFormat);
@@ -672,6 +674,9 @@ virQEMUDriverConfigLoadProcessEntry(virQEMUDriverConfigPtr cfg,
         return -1;
 
     if (virConfGetValueString(conf, "pr_helper", &cfg->prHelperName) < 0)
+        return -1;
+
+    if (virConfGetValueString(conf, "slirp_helper", &cfg->slirpHelperName) < 0)
         return -1;
 
     if (virConfGetValueString(conf, "dbus_daemon", &cfg->dbusDaemonName) < 0)

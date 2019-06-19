@@ -90,6 +90,7 @@ module Libvirtd_qemu =
                  | str_entry "bridge_helper"
                  | str_entry "pr_helper"
                  | str_entry "dbus_daemon"
+                 | str_entry "slirp_helper"
                  | bool_entry "set_process_name"
                  | int_entry "max_processes"
                  | int_entry "max_files"
