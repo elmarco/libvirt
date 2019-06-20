@@ -39,6 +39,7 @@
 #include "logging/log_manager.h"
 #include "virdomainmomentobjlist.h"
 #include "virenum.h"
+#include "virdbus.h"
 
 #define QEMU_DOMAIN_FORMAT_LIVE_FLAGS \
     (VIR_DOMAIN_XML_SECURE)
@@ -386,6 +387,10 @@ struct _qemuDomainObjPrivate {
 
     /* true if global -mem-prealloc appears on cmd line */
     bool memPrealloc;
+
+    /* true if dbus-daemon is running */
+    bool dbusDaemonRunning;
+    DBusConnection *dbusConn;
 };
 
 #define QEMU_DOMAIN_PRIVATE(vm) \

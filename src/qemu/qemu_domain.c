@@ -2051,6 +2051,11 @@ qemuDomainObjPrivateDataClear(qemuDomainObjPrivatePtr priv)
 
     qemuDomainObjResetJob(priv);
     qemuDomainObjResetAsyncJob(priv);
+
+    if (priv->dbusConn) {
+        dbus_connection_unref(priv->dbusConn);
+        priv->dbusConn = NULL;
+    }
 }
 
 
@@ -2478,6 +2483,9 @@ qemuDomainObjPrivateXMLFormat(virBufferPtr buf,
         virBufferAsprintf(buf, " type='%s'/>\n",
                           virDomainChrTypeToString(priv->monConfig->type));
     }
+
+    if (priv->dbusDaemonRunning)
+        virBufferAddLit(buf, "<dbusDaemon/>\n");
 
     if (priv->namespaces) {
         ssize_t ns = -1;
@@ -2909,6 +2917,8 @@ qemuDomainObjPrivateXMLParse(xmlXPathContextPtr ctxt,
                        virDomainChrTypeToString(priv->monConfig->type));
         goto error;
     }
+
+    priv->dbusDaemonRunning = virXPathBoolean("boolean(./dbusDaemon)", ctxt) > 0;
 
     if ((node = virXPathNode("./namespaces", ctxt))) {
         xmlNodePtr next;
