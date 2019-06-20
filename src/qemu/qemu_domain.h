@@ -384,6 +384,8 @@ struct _qemuDomainObjPrivate {
     /* true if dbus-daemon is running */
     bool dbusDaemonRunning;
     DBusConnection *dbusConn;
+
+    virHashTablePtr slirp; /* alias -> qemuSlirpPtr */
 };
 
 #define QEMU_DOMAIN_PRIVATE(vm) \

@@ -1258,6 +1258,7 @@ mymain(void)
     DO_TEST_FAILURE("net-vhostuser-fail",
                     QEMU_CAPS_VHOSTUSER_MULTIQUEUE);
     DO_TEST("net-user", NONE);
+    DO_TEST_CAPS_VER("net-user", "4.0.0");
     DO_TEST("net-user-addr", NONE);
     DO_TEST("net-virtio", NONE);
     DO_TEST("net-virtio-device",

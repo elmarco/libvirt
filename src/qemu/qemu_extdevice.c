@@ -23,6 +23,7 @@
 #include "qemu_extdevice.h"
 #include "qemu_domain.h"
 #include "qemu_tpm.h"
+#include "qemu_slirp.h"
 
 #include "viralloc.h"
 #include "virlog.h"
@@ -102,14 +103,25 @@ qemuExtDevicesInitPaths(virQEMUDriverPtr driver,
  */
 int
 qemuExtDevicesPrepareHost(virQEMUDriverPtr driver,
-                          virDomainDefPtr def)
+                          virDomainObjPtr vm)
 {
-    int ret = 0;
+    virDomainDefPtr def = vm->def;
+    qemuDomainObjPrivatePtr priv = vm->privateData;
+    size_t i;
 
-    if (def->tpm)
-        ret = qemuExtTPMPrepareHost(driver, def);
+    if (def->tpm &&
+        qemuExtTPMPrepareHost(driver, def) < 0)
+        return -1;
 
-    return ret;
+    for (i = 0; i < def->nnets; i++) {
+        virDomainNetDefPtr net = def->nets[i];
+        qemuSlirpPtr slirp = virHashLookup(priv->slirp, net->info.alias);
+
+        if (slirp && qemuSlirpOpen(slirp, driver, def) < 0)
+            return -1;
+    }
+
+    return 0;
 }
 
 
@@ -124,19 +136,29 @@ qemuExtDevicesCleanupHost(virQEMUDriverPtr driver,
         qemuExtTPMCleanupHost(def);
 }
 
-
 int
 qemuExtDevicesStart(virQEMUDriverPtr driver,
                     virDomainObjPtr vm,
                     qemuDomainLogContextPtr logCtxt)
 {
+    qemuDomainObjPrivatePtr priv = vm->privateData;
+    virDomainDefPtr def = vm->def;
     int ret = 0;
+    size_t i;
 
     if (qemuExtDevicesInitPaths(driver, vm->def) < 0)
         return -1;
 
     if (vm->def->tpm)
         ret = qemuExtTPMStart(driver, vm, logCtxt);
+
+    for (i = 0; i < def->nnets; i++) {
+        virDomainNetDefPtr net = def->nets[i];
+        qemuSlirpPtr slirp = virHashLookup(priv->slirp, net->info.alias);
+
+        if (slirp && qemuSlirpStart(slirp, vm, driver, net, logCtxt) < 0)
+            return -1;
+    }
 
     return ret;
 }
@@ -146,11 +168,20 @@ void
 qemuExtDevicesStop(virQEMUDriverPtr driver,
                    virDomainObjPtr vm)
 {
+    virDomainDefPtr def = vm->def;
+    size_t i;
+
     if (qemuExtDevicesInitPaths(driver, vm->def) < 0)
         return;
 
     if (vm->def->tpm)
         qemuExtTPMStop(driver, vm);
+
+    for (i = 0; i < def->nnets; i++) {
+        virDomainNetDefPtr net = def->nets[i];
+
+        qemuSlirpStop(vm, driver, net);
+    }
 }
 
 
@@ -169,10 +200,9 @@ qemuExtDevicesSetupCgroup(virQEMUDriverPtr driver,
                           virDomainDefPtr def,
                           virCgroupPtr cgroup)
 {
-    int ret = 0;
+    if (def->tpm &&
+        qemuExtTPMSetupCgroup(driver, def, cgroup) < 0)
+        return -1;
 
-    if (def->tpm)
-        ret = qemuExtTPMSetupCgroup(driver, def, cgroup);
-
-    return ret;
+    return 0;
 }

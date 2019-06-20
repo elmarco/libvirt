@@ -31,6 +31,7 @@
 #include "qemu_migration.h"
 #include "qemu_migration_params.h"
 #include "qemu_security.h"
+#include "qemu_slirp.h"
 #include "qemu_extdevice.h"
 #include "viralloc.h"
 #include "virlog.h"
@@ -1943,6 +1944,11 @@ qemuDomainSetPrivatePathsOld(virQEMUDriverPtr driver,
     return ret;
 }
 
+static void
+qemuDomainSlirpFree(void *payload, const void *name ATTRIBUTE_UNUSED)
+{
+    qemuSlirpFree(payload);
+}
 
 int
 qemuDomainSetPrivatePaths(virQEMUDriverPtr driver,
@@ -1992,6 +1998,7 @@ qemuDomainObjPrivateAlloc(void *opaque)
 
     priv->migMaxBandwidth = QEMU_DOMAIN_MIG_BANDWIDTH_MAX;
     priv->driver = opaque;
+    priv->slirp = virHashCreate(5, qemuDomainSlirpFree);
 
     return priv;
 
@@ -2064,6 +2071,8 @@ qemuDomainObjPrivateDataClear(qemuDomainObjPrivatePtr priv)
         dbus_connection_unref(priv->dbusConn);
         priv->dbusConn  = NULL;
     }
+
+    virHashRemoveAll(priv->slirp);
 }
 
 
@@ -2094,6 +2103,8 @@ qemuDomainObjPrivateFree(void *data)
 
     qemuDomainSecretInfoFree(&priv->migSecinfo);
     qemuDomainMasterKeyFree(priv);
+
+    virHashFree(priv->slirp);
 
     VIR_FREE(priv);
 }
@@ -2466,6 +2477,18 @@ qemuDomainObjPrivateXMLFormatJob(virBufferPtr buf,
     return ret;
 }
 
+static int
+qemuDomainObjPrivateFormatSlirp(void *payload,
+                                const void *alias,
+                                void *data)
+{
+    qemuSlirpPtr slirp = payload;
+    virBufferPtr buf = data;
+
+    virBufferAsprintf(buf, "<helper alias='%s' pid='%d'/>\n", (char *)alias, slirp->pid);
+
+    return 0;
+}
 
 static int
 qemuDomainObjPrivateXMLFormat(virBufferPtr buf,
@@ -2571,6 +2594,14 @@ qemuDomainObjPrivateXMLFormat(virBufferPtr buf,
 
     if (qemuDomainObjPrivateXMLFormatBlockjobs(buf, vm) < 0)
         return -1;
+
+    if (virHashSize(priv->slirp)) {
+        virBufferAddLit(buf, "<slirp>\n");
+        virBufferAdjustIndent(buf, 2);
+        virHashForEach(priv->slirp, qemuDomainObjPrivateFormatSlirp, buf);
+        virBufferAdjustIndent(buf, -2);
+        virBufferAddLit(buf, "</slirp>\n");
+    }
 
     return 0;
 }
@@ -3015,6 +3046,30 @@ qemuDomainObjPrivateXMLParse(xmlXPathContextPtr ctxt,
                                _("failed to parse qemu device list"));
                 goto error;
             }
+        }
+    }
+    VIR_FREE(nodes);
+
+    if ((n = virXPathNodeSet("./slirp/helper", ctxt, &nodes)) < 0) {
+        virReportError(VIR_ERR_INTERNAL_ERROR, "%s",
+                       _("failed to parse slirp helper list"));
+        goto error;
+    }
+    if (n > 0) {
+        for (i = 0; i < n; i++) {
+            VIR_AUTOFREE(char *) alias = virXMLPropString(nodes[i], "alias");
+            VIR_AUTOFREE(char *) pid = virXMLPropString(nodes[i], "pid");
+            VIR_AUTOPTR(qemuSlirp) slirp = qemuSlirpNew();
+
+            if (!alias || !pid || !slirp ||
+                virStrToLong_i(pid, NULL, 10, &slirp->pid) < 0) {
+                virReportError(VIR_ERR_INTERNAL_ERROR, "%s",
+                               _("failed to parse slirp helper list"));
+                goto error;
+            }
+
+            virHashAddEntry(priv->slirp, alias, slirp);
+            slirp = NULL;
         }
     }
     VIR_FREE(nodes);

@@ -25,6 +25,7 @@
 #include "domain_audit.h"
 #include "domain_nwfilter.h"
 #include "qemu_interface.h"
+#include "qemu_slirp.h"
 #include "passfd.h"
 #include "viralloc.h"
 #include "virlog.h"
@@ -600,6 +601,33 @@ qemuInterfaceBridgeConnect(virDomainDefPtr def,
     virObjectUnref(cfg);
 
     return ret;
+}
+
+
+qemuSlirpPtr
+qemuInterfacePrepareSlirp(virQEMUDriverPtr driver,
+                          virDomainNetDefPtr net)
+{
+    virQEMUDriverConfigPtr cfg = virQEMUDriverGetConfig(driver);
+    VIR_AUTOPTR(qemuSlirp) slirp = NULL;
+    size_t i;
+
+    if (!(slirp = qemuSlirpNewForHelper(cfg->slirpHelperName)))
+        return NULL;
+
+    for (i = 0; i < net->guestIP.nips; i++) {
+        const virNetDevIPAddr *ip = net->guestIP.ips[i];
+
+        if (VIR_SOCKET_ADDR_IS_FAMILY(&ip->address, AF_INET) &&
+            !qemuSlirpHasFeature(slirp, QEMU_SLIRP_FEATURE_IPV4))
+            return NULL;
+
+        if (VIR_SOCKET_ADDR_IS_FAMILY(&ip->address, AF_INET6) &&
+            !qemuSlirpHasFeature(slirp, QEMU_SLIRP_FEATURE_IPV6))
+            return NULL;
+    }
+
+    VIR_RETURN_PTR(slirp);
 }
 
 

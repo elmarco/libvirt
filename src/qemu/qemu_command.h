@@ -87,7 +87,8 @@ char *qemuBuildHostNetStr(virDomainNetDefPtr net,
                           char **tapfd,
                           size_t tapfdSize,
                           char **vhostfd,
-                          size_t vhostfdSize);
+                          size_t vhostfdSize,
+                          const char *slirpfd);
 
 /* Current, best practice */
 char *qemuBuildNicDevStr(virDomainDefPtr def,
