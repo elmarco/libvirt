@@ -80,6 +80,12 @@ int qemuSecurityStartTPMEmulator(virQEMUDriverPtr driver,
                                  int *exitstatus,
                                  int *cmdret);
 
+int qemuSecurityCommandRun(virQEMUDriverPtr driver,
+                           virDomainObjPtr vm,
+                           virCommandPtr cmd,
+                           int *exitstatus,
+                           int *cmdret);
+
 void qemuSecurityCleanupTPMEmulator(virQEMUDriverPtr driver,
                                     virDomainObjPtr vm);
 

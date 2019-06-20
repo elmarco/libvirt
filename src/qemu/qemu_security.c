@@ -414,6 +414,39 @@ qemuSecurityRestoreChardevLabel(virQEMUDriverPtr driver,
 }
 
 
+int
+qemuSecurityCommandRun(virQEMUDriverPtr driver,
+                       virDomainObjPtr vm,
+                       virCommandPtr cmd,
+                       int *exitstatus,
+                       int *cmdret)
+{
+    int ret = -1;
+
+    if (virSecurityManagerSetChildProcessLabel(driver->securityManager,
+                                               vm->def, cmd) < 0)
+        goto cleanup;
+
+    if (virSecurityManagerPreFork(driver->securityManager) < 0)
+        goto cleanup;
+
+    ret = 0;
+
+    *cmdret = virCommandRun(cmd, exitstatus);
+
+    virSecurityManagerPostFork(driver->securityManager);
+
+    if (*cmdret < 0)
+        goto cleanup;
+
+    return 0;
+
+cleanup:
+
+    return ret;
+}
+
+
 /*
  * qemuSecurityStartTPMEmulator:
  *
