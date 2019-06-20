@@ -57,6 +57,7 @@
 #include "qemu_security.h"
 #include "qemu_extdevice.h"
 #include "qemu_firmware.h"
+#include "qemu_dbus.h"
 
 #include "cpu/cpu.h"
 #include "cpu/cpu_x86.h"
@@ -6397,6 +6398,9 @@ qemuProcessPrepareHost(virQEMUDriverPtr driver,
     qemuDomainObjPrivatePtr priv = vm->privateData;
     virQEMUDriverConfigPtr cfg = virQEMUDriverGetConfig(driver);
 
+    if (qemuDBusPrepareHost(driver) < 0)
+        goto cleanup;
+
     if (qemuPrepareNVRAM(cfg, vm) < 0)
         goto cleanup;
 
@@ -6827,6 +6831,9 @@ qemuProcessLaunch(virConnectPtr conn,
         goto cleanup;
 
     if (qemuConnectAgent(driver, vm) < 0)
+        goto cleanup;
+
+    if (qemuDBusConnect(driver, vm) < 0)
         goto cleanup;
 
     VIR_DEBUG("Verifying and updating provided guest CPU");
@@ -7343,6 +7350,8 @@ void qemuProcessStop(virQEMUDriverPtr driver,
     qemuDomainCleanupRun(driver, vm);
 
     qemuExtDevicesStop(driver, vm);
+
+    qemuDBusStop(driver, vm);
 
     vm->def->id = -1;
 
@@ -8059,6 +8068,9 @@ qemuProcessReconnect(void *opaque)
     qemuProcessReconnectCheckMemAliasOrderMismatch(obj);
 
     if (qemuConnectAgent(driver, obj) < 0)
+        goto error;
+
+    if (qemuDBusConnect(driver, obj) < 0)
         goto error;
 
     for (i = 0; i < obj->def->nresctrls; i++) {
