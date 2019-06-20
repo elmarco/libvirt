@@ -149,6 +149,10 @@ virQEMUDriverConfigPtr virQEMUDriverConfigNew(bool privileged)
                        "%s/run/libvirt/qemu/swtpm", LOCALSTATEDIR) < 0)
             goto error;
 
+        if (virAsprintf(&cfg->dbusStateDir,
+                        "%s/run/libvirt/qemu/dbus", LOCALSTATEDIR) < 0)
+            goto error;
+
         if (virAsprintf(&cfg->cacheDir,
                       "%s/cache/libvirt/qemu", LOCALSTATEDIR) < 0)
             goto error;
@@ -212,6 +216,9 @@ virQEMUDriverConfigPtr virQEMUDriverConfigNew(bool privileged)
         VIR_FREE(rundir);
 
         if (virAsprintf(&cfg->swtpmStateDir, "%s/swtpm", cfg->stateDir) < 0)
+            goto error;
+
+        if (virAsprintf(&cfg->dbusStateDir, "%s/dbus", cfg->stateDir) < 0)
             goto error;
 
         if (!(cfg->configBaseDir = virGetUserConfigDirectory()))
@@ -331,6 +338,7 @@ static void virQEMUDriverConfigDispose(void *obj)
     VIR_FREE(cfg->swtpmLogDir);
     VIR_FREE(cfg->stateDir);
     VIR_FREE(cfg->swtpmStateDir);
+    VIR_FREE(cfg->dbusStateDir);
 
     VIR_FREE(cfg->libDir);
     VIR_FREE(cfg->cacheDir);
