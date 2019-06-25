@@ -106,7 +106,6 @@ qemuExtDevicesPrepareHost(virQEMUDriverPtr driver,
                           virDomainObjPtr vm)
 {
     virDomainDefPtr def = vm->def;
-    qemuDomainObjPrivatePtr priv = vm->privateData;
     size_t i;
 
     if (def->tpm &&
@@ -115,7 +114,7 @@ qemuExtDevicesPrepareHost(virQEMUDriverPtr driver,
 
     for (i = 0; i < def->nnets; i++) {
         virDomainNetDefPtr net = def->nets[i];
-        qemuSlirpPtr slirp = virHashLookup(priv->slirp, net->info.alias);
+        qemuSlirpPtr slirp = QEMU_DOMAIN_NETWORK_PRIVATE(net)->slirp;
 
         if (slirp && qemuSlirpOpen(slirp, driver, def) < 0)
             return -1;
@@ -141,7 +140,6 @@ qemuExtDevicesStart(virQEMUDriverPtr driver,
                     virDomainObjPtr vm,
                     qemuDomainLogContextPtr logCtxt)
 {
-    qemuDomainObjPrivatePtr priv = vm->privateData;
     virDomainDefPtr def = vm->def;
     int ret = 0;
     size_t i;
@@ -154,7 +152,7 @@ qemuExtDevicesStart(virQEMUDriverPtr driver,
 
     for (i = 0; i < def->nnets; i++) {
         virDomainNetDefPtr net = def->nets[i];
-        qemuSlirpPtr slirp = virHashLookup(priv->slirp, net->info.alias);
+        qemuSlirpPtr slirp = QEMU_DOMAIN_NETWORK_PRIVATE(net)->slirp;
 
         if (slirp && qemuSlirpStart(slirp, vm, driver, net, logCtxt) < 0)
             return -1;

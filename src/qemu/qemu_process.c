@@ -5616,8 +5616,8 @@ qemuProcessNetworkPrepareDevices(virQEMUDriverPtr driver,
         } else if (actualType == VIR_DOMAIN_NET_TYPE_USER &&
                    virQEMUCapsGet(priv->qemuCaps, QEMU_CAPS_NET_SOCKET_DGRAM)) {
             qemuSlirpPtr slirp = qemuInterfacePrepareSlirp(driver, net);
-            if (slirp)
-                virHashAddEntry(priv->slirp, net->info.alias, slirp);
+
+            QEMU_DOMAIN_NETWORK_PRIVATE(net)->slirp = slirp;
          }
 
     }

@@ -1281,6 +1281,43 @@ qemuDomainGraphicsPrivateDispose(void *obj)
 }
 
 
+static virClassPtr qemuDomainNetworkPrivateClass;
+static void qemuDomainNetworkPrivateDispose(void *obj);
+
+static int
+qemuDomainNetworkPrivateOnceInit(void)
+{
+    if (!VIR_CLASS_NEW(qemuDomainNetworkPrivate, virClassForObject()))
+        return -1;
+
+    return 0;
+}
+
+VIR_ONCE_GLOBAL_INIT(qemuDomainNetworkPrivate);
+
+static virObjectPtr
+qemuDomainNetworkPrivateNew(void)
+{
+    qemuDomainNetworkPrivatePtr priv;
+
+    if (qemuDomainNetworkPrivateInitialize() < 0)
+        return NULL;
+
+    if (!(priv = virObjectNew(qemuDomainNetworkPrivateClass)))
+        return NULL;
+
+    return (virObjectPtr) priv;
+}
+
+
+static void
+qemuDomainNetworkPrivateDispose(void *obj ATTRIBUTE_UNUSED)
+{
+    //qemuDomainNetworkPrivatePtr priv = obj;
+
+}
+
+
 /* qemuDomainSecretPlainSetup:
  * @secinfo: Pointer to secret info
  * @usageType: The virSecretUsageType
@@ -1944,12 +1981,6 @@ qemuDomainSetPrivatePathsOld(virQEMUDriverPtr driver,
     return ret;
 }
 
-static void
-qemuDomainSlirpFree(void *payload, const void *name ATTRIBUTE_UNUSED)
-{
-    qemuSlirpFree(payload);
-}
-
 int
 qemuDomainSetPrivatePaths(virQEMUDriverPtr driver,
                           virDomainObjPtr vm)
@@ -1998,7 +2029,6 @@ qemuDomainObjPrivateAlloc(void *opaque)
 
     priv->migMaxBandwidth = QEMU_DOMAIN_MIG_BANDWIDTH_MAX;
     priv->driver = opaque;
-    priv->slirp = virHashCreate(5, qemuDomainSlirpFree);
 
     return priv;
 
@@ -2071,8 +2101,6 @@ qemuDomainObjPrivateDataClear(qemuDomainObjPrivatePtr priv)
         dbus_connection_unref(priv->dbusConn);
         priv->dbusConn  = NULL;
     }
-
-    virHashRemoveAll(priv->slirp);
 }
 
 
@@ -2103,8 +2131,6 @@ qemuDomainObjPrivateFree(void *data)
 
     qemuDomainSecretInfoFree(&priv->migSecinfo);
     qemuDomainMasterKeyFree(priv);
-
-    virHashFree(priv->slirp);
 
     VIR_FREE(priv);
 }
@@ -2478,14 +2504,34 @@ qemuDomainObjPrivateXMLFormatJob(virBufferPtr buf,
 }
 
 static int
-qemuDomainObjPrivateFormatSlirp(void *payload,
-                                const void *alias,
-                                void *data)
+qemuDomainObjPrivateXMLFormatSlirp(virBufferPtr buf,
+                                   virDomainObjPtr vm)
 {
-    qemuSlirpPtr slirp = payload;
-    virBufferPtr buf = data;
+    size_t i;
 
-    virBufferAsprintf(buf, "<helper alias='%s' pid='%d'/>\n", (char *)alias, slirp->pid);
+    for (i = 0; i < vm->def->nnets; i++) {
+        virDomainNetDefPtr net = vm->def->nets[i];
+
+        if (QEMU_DOMAIN_NETWORK_PRIVATE(net)->slirp)
+            break;
+    }
+
+    if (i == vm->def->nnets)
+        return 0;
+
+    virBufferAddLit(buf, "<slirp>\n");
+    virBufferAdjustIndent(buf, 2);
+
+    for (i = 0; i < vm->def->nnets; i++) {
+        virDomainNetDefPtr net = vm->def->nets[i];
+
+        virBufferAsprintf(buf, "<helper alias='%s' pid='%d'/>\n",
+                          net->info.alias, QEMU_DOMAIN_NETWORK_PRIVATE(net)->slirp->pid);
+    }
+
+    virBufferAdjustIndent(buf, -2);
+    virBufferAddLit(buf, "</slirp>\n");
+
 
     return 0;
 }
@@ -2595,13 +2641,8 @@ qemuDomainObjPrivateXMLFormat(virBufferPtr buf,
     if (qemuDomainObjPrivateXMLFormatBlockjobs(buf, vm) < 0)
         return -1;
 
-    if (virHashSize(priv->slirp)) {
-        virBufferAddLit(buf, "<slirp>\n");
-        virBufferAdjustIndent(buf, 2);
-        virHashForEach(priv->slirp, qemuDomainObjPrivateFormatSlirp, buf);
-        virBufferAdjustIndent(buf, -2);
-        virBufferAddLit(buf, "</slirp>\n");
-    }
+    if (qemuDomainObjPrivateXMLFormatSlirp(buf, vm) < 0)
+        return -1;
 
     return 0;
 }
@@ -3060,6 +3101,7 @@ qemuDomainObjPrivateXMLParse(xmlXPathContextPtr ctxt,
             VIR_AUTOFREE(char *) alias = virXMLPropString(nodes[i], "alias");
             VIR_AUTOFREE(char *) pid = virXMLPropString(nodes[i], "pid");
             VIR_AUTOPTR(qemuSlirp) slirp = qemuSlirpNew();
+            virDomainDeviceDef dev;
 
             if (!alias || !pid || !slirp ||
                 virStrToLong_i(pid, NULL, 10, &slirp->pid) < 0) {
@@ -3068,7 +3110,11 @@ qemuDomainObjPrivateXMLParse(xmlXPathContextPtr ctxt,
                 goto error;
             }
 
-            virHashAddEntry(priv->slirp, alias, slirp);
+            if (virDomainDefFindDevice(vm->def, alias, &dev, true) < 0 ||
+                dev.type != VIR_DOMAIN_DEVICE_NET)
+                goto error;
+
+            QEMU_DOMAIN_NETWORK_PRIVATE(dev.data.net)->slirp = slirp;
             slirp = NULL;
         }
     }
@@ -3144,6 +3190,7 @@ virDomainXMLPrivateDataCallbacks virQEMUDriverPrivateDataCallbacks = {
     .chrSourceNew = qemuDomainChrSourcePrivateNew,
     .vsockNew = qemuDomainVsockPrivateNew,
     .graphicsNew = qemuDomainGraphicsPrivateNew,
+    .networkNew = qemuDomainNetworkPrivateNew,
     .parse = qemuDomainObjPrivateXMLParse,
     .format = qemuDomainObjPrivateXMLFormat,
     .getParseOpaque = qemuDomainObjPrivateXMLGetParseOpaque,

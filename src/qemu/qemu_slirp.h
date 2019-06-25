@@ -38,9 +38,6 @@ typedef enum {
 VIR_ENUM_DECL(qemuSlirpFeature);
 
 
-typedef struct _qemuSlirp qemuSlirp;
-typedef struct _qemuSlirp *qemuSlirpPtr;
-
 struct _qemuSlirp {
     int fd[2];
     qemuSlirpFeature *features;

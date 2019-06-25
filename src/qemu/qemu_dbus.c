@@ -223,7 +223,7 @@ qemuDBusStart(virQEMUDriverPtr driver,
     VIR_AUTOFREE(char *) sockpath = NULL;
     virTimeBackOffVar timebackoff;
     const unsigned long long timeout = 500 * 1000; /* ms */
-    VIR_AUTOCLOSE errfd = -1;
+    int errfd = -1;
     int cmdret = 0;
     int exitstatus = 0;
 

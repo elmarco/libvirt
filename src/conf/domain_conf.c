@@ -2442,6 +2442,8 @@ virDomainNetDefClear(virDomainNetDefPtr def)
     virNetDevBandwidthFree(def->bandwidth);
     def->bandwidth = NULL;
     virNetDevVlanClear(&def->vlan);
+
+    virObjectUnref(def->privateData);
 }
 
 void
@@ -11432,7 +11434,7 @@ virDomainNetDefParseXML(virDomainXMLOptionPtr xmlopt,
     VIR_AUTOFREE(char *) trustGuestRxFilters = NULL;
     VIR_AUTOFREE(char *) vhost_path = NULL;
 
-    if (VIR_ALLOC(def) < 0)
+    if (!(def = virDomainNetDefNew(xmlopt)))
         return NULL;
 
     ctxt->node = node;
@@ -14302,6 +14304,24 @@ virDomainGraphicsDefNew(virDomainXMLOptionPtr xmlopt)
 
     if (xmlopt && xmlopt->privateData.graphicsNew &&
         !(def->privateData = xmlopt->privateData.graphicsNew())) {
+        VIR_FREE(def);
+        def = NULL;
+    }
+
+    return def;
+}
+
+
+virDomainNetDefPtr
+virDomainNetDefNew(virDomainXMLOptionPtr xmlopt)
+{
+    virDomainNetDefPtr def = NULL;
+
+    if (VIR_ALLOC(def) < 0)
+        return NULL;
+
+    if (xmlopt && xmlopt->privateData.networkNew &&
+        !(def->privateData = xmlopt->privateData.networkNew())) {
         VIR_FREE(def);
         def = NULL;
     }

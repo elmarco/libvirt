@@ -8702,7 +8702,6 @@ qemuBuildInterfaceCommandLine(virQEMUDriverPtr driver,
                               size_t *nnicindexes,
                               int **nicindexes)
 {
-    qemuDomainObjPrivatePtr priv = vm->privateData;
     virDomainDefPtr def = vm->def;
     int ret = -1;
     char *nic = NULL;
@@ -8944,7 +8943,7 @@ qemuBuildInterfaceCommandLine(virQEMUDriverPtr driver,
             goto cleanup;
     }
 
-    slirp = virHashLookup(priv->slirp, net->info.alias);
+    slirp = QEMU_DOMAIN_NETWORK_PRIVATE(net)->slirp;
     if (slirp && !standalone) {
         int slirpfd = qemuSlirpGetFD(slirp);
         virCommandPassFD(cmd, slirpfd,

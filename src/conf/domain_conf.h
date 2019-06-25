@@ -1019,6 +1019,7 @@ struct _virDomainNetDef {
     unsigned int mtu;
     virNetDevCoalescePtr coalesce;
     virDomainVirtioOptionsPtr virtio;
+    virObjectPtr privateData;
 };
 
 typedef enum {
@@ -2707,6 +2708,7 @@ struct _virDomainXMLPrivateDataCallbacks {
     virDomainXMLPrivateDataNewFunc    chrSourceNew;
     virDomainXMLPrivateDataNewFunc    vsockNew;
     virDomainXMLPrivateDataNewFunc    graphicsNew;
+    virDomainXMLPrivateDataNewFunc    networkNew;
     virDomainXMLPrivateDataFormatFunc format;
     virDomainXMLPrivateDataParseFunc  parse;
     /* following function shall return a pointer which will be used as the
@@ -2890,6 +2892,10 @@ virDomainChrDefPtr virDomainChrDefNew(virDomainXMLOptionPtr xmlopt);
 
 virDomainGraphicsDefPtr
 virDomainGraphicsDefNew(virDomainXMLOptionPtr xmlopt);
+
+virDomainNetDefPtr
+virDomainNetDefNew(virDomainXMLOptionPtr xmlopt);
+
 virDomainDefPtr virDomainDefNew(void);
 
 void virDomainObjAssignDef(virDomainObjPtr domain,

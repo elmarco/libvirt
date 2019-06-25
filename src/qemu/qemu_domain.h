@@ -41,7 +41,7 @@
 #include "virenum.h"
 #include "virdbus.h"
 
-#define QEMU_DOMAIN_FORMAT_LIVE_FLAGS \
+#define QEMU_DOMAIN_FORMAT_LIVE_FLAGS           \
     (VIR_DOMAIN_XML_SECURE)
 
 #if ULONG_MAX == 4294967295
@@ -384,8 +384,6 @@ struct _qemuDomainObjPrivate {
     /* true if dbus-daemon is running */
     bool dbusDaemonRunning;
     DBusConnection *dbusConn;
-
-    virHashTablePtr slirp; /* alias -> qemuSlirpPtr */
 };
 
 #define QEMU_DOMAIN_PRIVATE(vm) \
@@ -498,6 +496,22 @@ struct _qemuDomainGraphicsPrivate {
 
     char *tlsAlias;
     qemuDomainSecretInfoPtr secinfo;
+};
+
+
+typedef struct _qemuSlirp qemuSlirp;
+typedef struct _qemuSlirp *qemuSlirpPtr;
+
+
+#define QEMU_DOMAIN_NETWORK_PRIVATE(dev)                \
+    ((qemuDomainNetworkPrivatePtr) (dev)->privateData)
+
+typedef struct _qemuDomainNetworkPrivate qemuDomainNetworkPrivate;
+typedef qemuDomainNetworkPrivate *qemuDomainNetworkPrivatePtr;
+struct _qemuDomainNetworkPrivate {
+    virObject parent;
+
+    qemuSlirpPtr slirp;
 };
 
 

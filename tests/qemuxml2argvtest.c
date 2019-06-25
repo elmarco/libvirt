@@ -526,6 +526,8 @@ testCompareXMLToArgv(const void *data)
        }
     }
 
+    //priv->
+
     if (!(cmd = qemuProcessCreatePretendCmd(&driver, vm, migrateURI,
                                             (flags & FLAG_FIPS), false,
                                             VIR_QEMU_PROCESS_START_COLD))) {
