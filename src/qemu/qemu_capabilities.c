@@ -536,6 +536,7 @@ VIR_ENUM_IMPL(virQEMUCaps,
 
               /* 335 */
               "net-socket-dgram",
+              "dbus-vmstate",
     );
 
 
@@ -1124,6 +1125,7 @@ struct virQEMUCapsStringFlags virQEMUCapsObjectTypes[] = {
     { "virtio-serial-pci-transitional", QEMU_CAPS_VIRTIO_PCI_TRANSITIONAL },
     { "virtio-serial-pci-non-transitional", QEMU_CAPS_VIRTIO_PCI_TRANSITIONAL },
     { "max-x86_64-cpu", QEMU_CAPS_X86_MAX_CPU },
+    { "dbus-vmstate", QEMU_CAPS_DBUS_VMSTATE },
 };
 
 static struct virQEMUCapsStringFlags virQEMUCapsDevicePropsVirtioBalloon[] = {

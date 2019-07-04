@@ -517,6 +517,7 @@ typedef enum { /* virQEMUCapsFlags grouping marker for syntax-check */
 
     /* 335 */
     QEMU_CAPS_NET_SOCKET_DGRAM, /* -net socket,fd= with dgram socket */
+    QEMU_CAPS_DBUS_VMSTATE, /* -object dbus-vmstate */
 
     QEMU_CAPS_LAST /* this must always be the last item */
 } virQEMUCapsFlags;
