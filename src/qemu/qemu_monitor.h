@@ -685,6 +685,9 @@ int qemuMonitorSavePhysicalMemory(qemuMonitorPtr mon,
                                   size_t length,
                                   const char *path);
 
+int qemuMonitorSetDBusVMStateIdList(qemuMonitorPtr mon,
+                                    const char **list);
+
 int qemuMonitorSetMigrationSpeed(qemuMonitorPtr mon,
                                  unsigned long bandwidth);
 

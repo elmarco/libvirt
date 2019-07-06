@@ -2056,6 +2056,9 @@ qemuDomainObjPrivateDataClear(qemuDomainObjPrivatePtr priv)
         dbus_connection_unref(priv->dbusConn);
         priv->dbusConn = NULL;
     }
+
+    virStringListFree(priv->dbusVMStateIds);
+    priv->dbusVMStateIds = NULL;
 }
 
 
@@ -2486,6 +2489,9 @@ qemuDomainObjPrivateXMLFormat(virBufferPtr buf,
 
     if (priv->dbusDaemonRunning)
         virBufferAddLit(buf, "<dbusDaemon/>\n");
+
+    if (priv->dbusVMState)
+        virBufferAddLit(buf, "<dbusVMState/>\n");
 
     if (priv->namespaces) {
         ssize_t ns = -1;
@@ -2919,6 +2925,8 @@ qemuDomainObjPrivateXMLParse(xmlXPathContextPtr ctxt,
     }
 
     priv->dbusDaemonRunning = virXPathBoolean("boolean(./dbusDaemon)", ctxt) > 0;
+
+    priv->dbusVMState = virXPathBoolean("boolean(./dbusVMState)", ctxt) > 0;
 
     if ((node = virXPathNode("./namespaces", ctxt))) {
         xmlNodePtr next;

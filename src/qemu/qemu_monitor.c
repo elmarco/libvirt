@@ -27,6 +27,7 @@
 #include <unistd.h>
 #include <fcntl.h>
 
+#include "qemu_alias.h"
 #include "qemu_monitor.h"
 #include "qemu_monitor_text.h"
 #include "qemu_monitor_json.h"
@@ -2475,6 +2476,27 @@ qemuMonitorSavePhysicalMemory(qemuMonitorPtr mon,
     QEMU_CHECK_MONITOR(mon);
 
     return qemuMonitorJSONSavePhysicalMemory(mon, offset, length, path);
+}
+
+
+int
+qemuMonitorSetDBusVMStateIdList(qemuMonitorPtr mon,
+                                const char **list)
+{
+    VIR_AUTOFREE(char *) path = NULL;
+
+    VIR_DEBUG("list=%p", list);
+
+    if (virStringListLength(list) == 0)
+        return 0;
+
+    if (virAsprintf(&path, "/objects/%s",
+                    qemuDomainGetDBusVMStateAlias()) < 0)
+        return -1;
+
+    QEMU_CHECK_MONITOR(mon);
+
+    return qemuMonitorJSONSetDBusVMStateIdList(mon, path, list);
 }
 
 

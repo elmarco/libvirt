@@ -150,3 +150,11 @@ int qemuDomainSetVcpuInternal(virQEMUDriverPtr driver,
                               virDomainDefPtr persistentDef,
                               virBitmapPtr vcpus,
                               bool state);
+
+int qemuHotplugAttachDBusVMState(virQEMUDriverPtr driver,
+                                 virDomainObjPtr vm,
+                                 qemuDomainAsyncJob asyncJob);
+
+int qemuHotplugRemoveDBusVMState(virQEMUDriverPtr driver,
+                                 virDomainObjPtr vm,
+                                 qemuDomainAsyncJob asyncJob);

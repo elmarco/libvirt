@@ -1112,9 +1112,17 @@ qemuMigrationSrcIsAllowed(virQEMUDriverPtr driver,
                           bool remote,
                           unsigned int flags)
 {
+    qemuDomainObjPrivatePtr priv = vm->privateData;
     int nsnapshots;
     int pauseReason;
     size_t i;
+
+    if (virStringListLength((const char **)priv->dbusVMStateIds) &&
+        !virQEMUCapsGet(priv->qemuCaps, QEMU_CAPS_DBUS_VMSTATE)) {
+        virReportError(VIR_ERR_OPERATION_INVALID, "%s",
+                       _("cannot migrate this domain without dbus-vmstate support"));
+        return false;
+    }
 
     /* perform these checks only when migrating to remote hosts */
     if (remote) {
@@ -1846,8 +1854,14 @@ qemuMigrationDstRun(virQEMUDriverPtr driver,
     if (qemuDomainObjEnterMonitorAsync(driver, vm, asyncJob) < 0)
         return -1;
 
+    rv = qemuMonitorSetDBusVMStateIdList(priv->mon,
+                                         (const char **)priv->dbusVMStateIds);
+    if (rv < 0)
+        goto exit_monitor;
+
     rv = qemuMonitorMigrateIncoming(priv->mon, uri);
 
+ exit_monitor:
     if (qemuDomainObjExitMonitor(driver, vm) < 0 || rv < 0)
         goto cleanup;
 
@@ -3353,6 +3367,37 @@ qemuMigrationSrcContinue(virQEMUDriverPtr driver,
 
 
 static int
+qemuMigrationSetDBusVMState(virQEMUDriverPtr driver,
+                            virDomainObjPtr vm)
+{
+    qemuDomainObjPrivatePtr priv = vm->privateData;
+
+    if (virStringListLength((const char **)priv->dbusVMStateIds) > 0) {
+        int rv;
+
+        if (qemuHotplugAttachDBusVMState(driver, vm, QEMU_ASYNC_JOB_NONE) < 0)
+            return -1;
+
+        if (qemuDomainObjEnterMonitorAsync(driver, vm, QEMU_ASYNC_JOB_NONE) < 0)
+            return -1;
+
+        rv = qemuMonitorSetDBusVMStateIdList(priv->mon,
+                                             (const char **)priv->dbusVMStateIds);
+
+        if (qemuDomainObjExitMonitor(driver, vm) < 0)
+            rv = -1;
+
+        return rv;
+    } else {
+        if (qemuHotplugRemoveDBusVMState(driver, vm, QEMU_ASYNC_JOB_NONE) < 0)
+            return -1;
+    }
+
+    return 0;
+}
+
+
+static int
 qemuMigrationSrcRun(virQEMUDriverPtr driver,
                     virDomainObjPtr vm,
                     const char *persist_xml,
@@ -3501,6 +3546,9 @@ qemuMigrationSrcRun(virQEMUDriverPtr driver,
                       "Falling back to previous implementation.");
         }
     }
+
+    if (qemuMigrationSetDBusVMState(driver, vm) < 0)
+        goto exit_monitor;
 
     /* Before EnterMonitor, since already qemuProcessStopCPUs does that */
     if (!(flags & VIR_MIGRATE_LIVE) &&
@@ -5206,6 +5254,9 @@ qemuMigrationSrcToFile(virQEMUDriverPtr driver, virDomainObjPtr vm,
     unsigned long saveMigBandwidth = priv->migMaxBandwidth;
     char *errbuf = NULL;
     virErrorPtr orig_err = NULL;
+
+    if (qemuMigrationSetDBusVMState(driver, vm) < 0)
+        return -1;
 
     /* Increase migration bandwidth to unlimited since target is a file.
      * Failure to change migration speed is not fatal. */

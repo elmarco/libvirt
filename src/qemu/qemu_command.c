@@ -24,6 +24,7 @@
 #include "qemu_command.h"
 #include "qemu_hostdev.h"
 #include "qemu_capabilities.h"
+#include "qemu_dbus.h"
 #include "qemu_interface.h"
 #include "qemu_alias.h"
 #include "qemu_security.h"
@@ -10406,6 +10407,67 @@ qemuBuildManagedPRCommandLine(virCommandPtr cmd,
 }
 
 
+static virJSONValuePtr
+qemuBuildDBusVMStateInfoPropsInternal(const char *alias,
+                                      const char *addr)
+{
+    virJSONValuePtr ret = NULL;
+
+    if (qemuMonitorCreateObjectProps(&ret,
+                                     "dbus-vmstate", alias,
+                                     "s:addr", addr, NULL) < 0)
+        return NULL;
+
+    return ret;
+}
+
+
+virJSONValuePtr
+qemuBuildDBusVMStateInfoProps(virQEMUDriverPtr driver,
+                              virDomainObjPtr vm)
+{
+    VIR_AUTOFREE(char *) addr = qemuDBusGetAddress(driver, vm);
+
+    if (!addr)
+        return NULL;
+
+    return qemuBuildDBusVMStateInfoPropsInternal(qemuDomainGetDBusVMStateAlias(),
+                                                 addr);
+}
+
+
+static int
+qemuBuildDBusVMStateCommandLine(virCommandPtr cmd,
+                                virQEMUDriverPtr driver,
+                                virDomainObjPtr vm)
+{
+    VIR_AUTOCLEAN(virBuffer) buf = VIR_BUFFER_INITIALIZER;
+    VIR_AUTOPTR(virJSONValue) props = NULL;
+    qemuDomainObjPrivatePtr priv = QEMU_DOMAIN_PRIVATE(vm);
+
+    if (virStringListLength((const char **)priv->dbusVMStateIds) == 0)
+        return 0;
+
+    if (!virQEMUCapsGet(priv->qemuCaps, QEMU_CAPS_DBUS_VMSTATE)) {
+        VIR_INFO("dbus-vmstate object is not supported by this QEMU binary");
+        return 0;
+    }
+
+    if (!(props = qemuBuildDBusVMStateInfoProps(driver, vm)))
+        return -1;
+
+    if (virQEMUBuildObjectCommandlineFromJSON(&buf, props) < 0)
+        return -1;
+
+    virCommandAddArg(cmd, "-object");
+    virCommandAddArgBuffer(cmd, &buf);
+
+    priv->dbusVMState = true;
+
+    return 0;
+}
+
+
 /**
  * qemuBuildCommandLineValidate:
  *
@@ -10648,6 +10710,9 @@ qemuBuildCommandLine(virQEMUDriverPtr driver,
         virCommandAddArg(cmd, "-S"); /* freeze CPU */
 
     if (qemuBuildMasterKeyCommandLine(cmd, priv) < 0)
+        goto error;
+
+    if (qemuBuildDBusVMStateCommandLine(cmd, driver, vm) < 0)
         goto error;
 
     if (qemuBuildManagedPRCommandLine(cmd, def, priv) < 0)

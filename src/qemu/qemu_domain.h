@@ -391,6 +391,11 @@ struct _qemuDomainObjPrivate {
     /* true if dbus-daemon is running */
     bool dbusDaemonRunning;
     DBusConnection *dbusConn;
+
+    /* list of Ids to migrate */
+    char **dbusVMStateIds;
+    /* true if -object dbus-vmstate was added */
+    bool dbusVMState;
 };
 
 #define QEMU_DOMAIN_PRIVATE(vm) \
