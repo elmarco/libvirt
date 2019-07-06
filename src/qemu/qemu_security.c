@@ -631,3 +631,25 @@ qemuSecurityRestoreSavedStateLabel(virQEMUDriverPtr driver,
     virSecurityManagerTransactionAbort(driver->securityManager);
     return ret;
 }
+
+
+int
+qemuSecurityCommandRun(virQEMUDriverPtr driver,
+                       virDomainObjPtr vm,
+                       virCommandPtr cmd,
+                       int *exitstatus,
+                       int *cmdret)
+{
+    if (virSecurityManagerSetChildProcessLabel(driver->securityManager,
+                                               vm->def, cmd) < 0)
+        return -1;
+
+    if (virSecurityManagerPreFork(driver->securityManager) < 0)
+        return -1;
+
+    *cmdret = virCommandRun(cmd, exitstatus);
+
+    virSecurityManagerPostFork(driver->securityManager);
+
+    return 0;
+}
