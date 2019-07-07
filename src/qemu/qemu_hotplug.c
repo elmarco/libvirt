@@ -1142,6 +1142,7 @@ qemuDomainAttachNetDevice(virQEMUDriverPtr driver,
     qemuDomainObjPrivatePtr priv = vm->privateData;
     virDomainDeviceDef dev = { VIR_DOMAIN_DEVICE_NET, { .net = net } };
     virErrorPtr originalError = NULL;
+    VIR_AUTOFREE(char *) slirpfdName = NULL;
     char **tapfdName = NULL;
     int *tapfd = NULL;
     size_t tapfdSize = 0;
@@ -1380,7 +1381,8 @@ qemuDomainAttachNetDevice(virQEMUDriverPtr driver,
 
     if (!(netstr = qemuBuildHostNetStr(net, driver,
                                        tapfdName, tapfdSize,
-                                       vhostfdName, vhostfdSize)))
+                                       vhostfdName, vhostfdSize,
+                                       slirpfdName)))
         goto cleanup;
 
     qemuDomainObjEnterMonitor(driver, vm);

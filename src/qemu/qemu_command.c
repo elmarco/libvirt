@@ -28,6 +28,7 @@
 #include "qemu_interface.h"
 #include "qemu_alias.h"
 #include "qemu_security.h"
+#include "qemu_slirp.h"
 #include "qemu_block.h"
 #include "cpu/cpu.h"
 #include "dirname.h"
@@ -4038,7 +4039,8 @@ qemuBuildHostNetStr(virDomainNetDefPtr net,
                     char **tapfd,
                     size_t tapfdSize,
                     char **vhostfd,
-                    size_t vhostfdSize)
+                    size_t vhostfdSize,
+                    const char *slirpfd)
 {
     bool is_tap = false;
     virBuffer buf = VIR_BUFFER_INITIALIZER;
@@ -4109,6 +4111,12 @@ qemuBuildHostNetStr(virDomainNetDefPtr net,
         break;
 
     case VIR_DOMAIN_NET_TYPE_USER:
+        if (slirpfd) {
+            virBufferAsprintf(&buf, "socket,fd=%s,",
+                              slirpfd);
+            break;
+        }
+
         virBufferAddLit(&buf, "user,");
         for (i = 0; i < net->guestIP.nips; i++) {
             const virNetDevIPAddr *ip = net->guestIP.ips[i];
@@ -8654,10 +8662,10 @@ qemuInterfaceVhostuserConnect(virQEMUDriverPtr driver,
 
 static int
 qemuBuildInterfaceCommandLine(virQEMUDriverPtr driver,
+                              virDomainObjPtr vm,
                               virLogManagerPtr logManager,
                               virSecurityManagerPtr secManager,
                               virCommandPtr cmd,
-                              virDomainDefPtr def,
                               virDomainNetDefPtr net,
                               virQEMUCapsPtr qemuCaps,
                               unsigned int bootindex,
@@ -8666,6 +8674,7 @@ qemuBuildInterfaceCommandLine(virQEMUDriverPtr driver,
                               size_t *nnicindexes,
                               int **nicindexes)
 {
+    virDomainDefPtr def = vm->def;
     int ret = -1;
     char *nic = NULL;
     char *host = NULL;
@@ -8676,9 +8685,11 @@ qemuBuildInterfaceCommandLine(virQEMUDriverPtr driver,
     size_t vhostfdSize = 0;
     char **tapfdName = NULL;
     char **vhostfdName = NULL;
+    VIR_AUTOFREE(char *) slirpfdName = NULL;
     virDomainNetType actualType = virDomainNetGetActualType(net);
     virNetDevBandwidthPtr actualBandwidth;
     bool requireNicdev = false;
+    qemuSlirpPtr slirp;
     size_t i;
 
 
@@ -8904,6 +8915,16 @@ qemuBuildInterfaceCommandLine(virQEMUDriverPtr driver,
             goto cleanup;
     }
 
+    slirp = QEMU_DOMAIN_NETWORK_PRIVATE(net)->slirp;
+    if (slirp && !standalone) {
+        int slirpfd = qemuSlirpGetFD(slirp);
+        virCommandPassFD(cmd, slirpfd,
+                         VIR_COMMAND_PASS_FD_CLOSE_PARENT);
+        if (virAsprintf(&slirpfdName, "%d", slirpfd) < 0)
+            goto cleanup;
+    }
+
+
     for (i = 0; i < tapfdSize; i++) {
         if (qemuSecuritySetTapFDLabel(driver->securityManager,
                                       def, tapfd[i]) < 0)
@@ -8928,7 +8949,8 @@ qemuBuildInterfaceCommandLine(virQEMUDriverPtr driver,
 
     if (!(host = qemuBuildHostNetStr(net, driver,
                                      tapfdName, tapfdSize,
-                                     vhostfdName, vhostfdSize)))
+                                     vhostfdName, vhostfdSize,
+                                     slirpfdName)))
         goto cleanup;
     virCommandAddArgList(cmd, "-netdev", host, NULL);
 
@@ -8996,10 +9018,10 @@ qemuBuildInterfaceCommandLine(virQEMUDriverPtr driver,
  */
 static int
 qemuBuildNetCommandLine(virQEMUDriverPtr driver,
+                        virDomainObjPtr vm,
                         virLogManagerPtr logManager,
                         virSecurityManagerPtr secManager,
                         virCommandPtr cmd,
-                        virDomainDefPtr def,
                         virQEMUCapsPtr qemuCaps,
                         virNetDevVPortProfileOp vmop,
                         bool standalone,
@@ -9010,6 +9032,7 @@ qemuBuildNetCommandLine(virQEMUDriverPtr driver,
     size_t i;
     int last_good_net = -1;
     virErrorPtr originalError = NULL;
+    virDomainDefPtr def = vm->def;
 
     if (def->nnets) {
         unsigned int bootNet = 0;
@@ -9025,7 +9048,7 @@ qemuBuildNetCommandLine(virQEMUDriverPtr driver,
         for (i = 0; i < def->nnets; i++) {
             virDomainNetDefPtr net = def->nets[i];
 
-            if (qemuBuildInterfaceCommandLine(driver, logManager, secManager, cmd, def, net,
+            if (qemuBuildInterfaceCommandLine(driver, vm, logManager, secManager, cmd, net,
                                               qemuCaps, bootNet, vmop,
                                               standalone, nnicindexes,
                                               nicindexes) < 0)
@@ -10817,7 +10840,7 @@ qemuBuildCommandLine(virQEMUDriverPtr driver,
     if (qemuBuildFSDevCommandLine(cmd, def, qemuCaps) < 0)
         goto error;
 
-    if (qemuBuildNetCommandLine(driver, logManager, secManager, cmd, def,
+    if (qemuBuildNetCommandLine(driver, vm, logManager, secManager, cmd,
                                 qemuCaps, vmop, standalone,
                                 nnicindexes, nicindexes, &bootHostdevNet) < 0)
         goto error;
