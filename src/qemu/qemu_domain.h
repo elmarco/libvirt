@@ -511,6 +511,10 @@ struct _qemuDomainGraphicsPrivate {
 };
 
 
+typedef struct _qemuSlirp qemuSlirp;
+typedef struct _qemuSlirp *qemuSlirpPtr;
+
+
 #define QEMU_DOMAIN_NETWORK_PRIVATE(dev)                \
     ((qemuDomainNetworkPrivatePtr) (dev)->privateData)
 
