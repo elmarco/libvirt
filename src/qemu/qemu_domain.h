@@ -523,7 +523,7 @@ typedef qemuDomainNetworkPrivate *qemuDomainNetworkPrivatePtr;
 struct _qemuDomainNetworkPrivate {
     virObject parent;
 
-    bool tmp_to_be_larger_than_parent;
+    qemuSlirpPtr slirp;
 };
 
 
