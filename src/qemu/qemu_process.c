@@ -6535,7 +6535,7 @@ qemuProcessPrepareHost(virQEMUDriverPtr driver,
         goto cleanup;
 
     VIR_DEBUG("Preparing external devices");
-    if (qemuExtDevicesPrepareHost(driver, vm->def) < 0)
+    if (qemuExtDevicesPrepareHost(driver, vm) < 0)
         goto cleanup;
 
     if (qemuProcessPrepareSEVGuestInput(vm) < 0)
@@ -6710,7 +6710,7 @@ qemuProcessLaunch(virConnectPtr conn,
     if (qemuProcessGenID(vm, flags) < 0)
         goto cleanup;
 
-    if (qemuExtDevicesStart(driver, vm) < 0)
+    if (qemuExtDevicesStart(driver, vm, incoming) < 0)
         goto cleanup;
 
     VIR_DEBUG("Building emulator command line");
