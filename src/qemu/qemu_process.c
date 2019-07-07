@@ -5619,8 +5619,12 @@ qemuProcessInit(virQEMUDriverPtr driver,
  * qemuProcessNetworkPrepareDevices
  */
 static int
-qemuProcessNetworkPrepareDevices(virDomainDefPtr def)
+qemuProcessNetworkPrepareDevices(virQEMUDriverPtr driver,
+                                 virDomainObjPtr vm,
+                                 unsigned int flags)
 {
+    virDomainDefPtr def = vm->def;
+    qemuDomainObjPrivatePtr priv = vm->privateData;
     int ret = -1;
     size_t i;
     virConnectPtr conn = NULL;
@@ -5665,7 +5669,14 @@ qemuProcessNetworkPrepareDevices(virDomainDefPtr def)
             }
             if (virDomainHostdevInsert(def, hostdev) < 0)
                 goto cleanup;
-        }
+        } else if (actualType == VIR_DOMAIN_NET_TYPE_USER &&
+                   !(flags & VIR_QEMU_PROCESS_START_NO_SLIRP) &&
+                   virQEMUCapsGet(priv->qemuCaps, QEMU_CAPS_NET_SOCKET_DGRAM)) {
+            qemuSlirpPtr slirp = qemuInterfacePrepareSlirp(driver, net);
+
+            QEMU_DOMAIN_NETWORK_PRIVATE(net)->slirp = slirp;
+         }
+
     }
     ret = 0;
  cleanup:
@@ -6468,7 +6479,7 @@ qemuProcessPrepareHost(virQEMUDriverPtr driver,
      * will need to be setup.
      */
     VIR_DEBUG("Preparing network devices");
-    if (qemuProcessNetworkPrepareDevices(vm->def) < 0)
+    if (qemuProcessNetworkPrepareDevices(driver, vm, flags) < 0)
         goto cleanup;
 
     /* Must be run before security labelling */
