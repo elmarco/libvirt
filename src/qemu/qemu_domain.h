@@ -560,6 +560,7 @@ struct _qemuDomainSaveCookie {
     virObject parent;
 
     virCPUDefPtr cpu;
+    bool hasSlirpHelper;
 };
 
 

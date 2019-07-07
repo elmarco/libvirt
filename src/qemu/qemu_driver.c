@@ -6788,6 +6788,7 @@ qemuDomainSaveImageStartVM(virConnectPtr conn,
     virQEMUDriverConfigPtr cfg = virQEMUDriverGetConfig(driver);
     virQEMUSaveHeaderPtr header = &data->header;
     qemuDomainSaveCookiePtr cookie = NULL;
+    unsigned int flags;
 
     if (virSaveCookieParseString(data->cookie, (virObjectPtr *)&cookie,
                                  virDomainXMLOptionGetSaveCookie(driver->xmlopt)) < 0)
@@ -6819,11 +6820,14 @@ qemuDomainSaveImageStartVM(virConnectPtr conn,
         qemuDomainFixupCPUs(vm, &cookie->cpu) < 0)
         goto cleanup;
 
+    flags = VIR_QEMU_PROCESS_START_PAUSED | VIR_QEMU_PROCESS_START_GEN_VMID;
+    if (!cookie->hasSlirpHelper)
+        flags |= VIR_QEMU_PROCESS_START_NO_SLIRP;
+
     if (qemuProcessStart(conn, driver, vm, cookie ? cookie->cpu : NULL,
                          asyncJob, "stdio", *fd, path, NULL,
                          VIR_NETDEV_VPORT_PROFILE_OP_RESTORE,
-                         VIR_QEMU_PROCESS_START_PAUSED |
-                         VIR_QEMU_PROCESS_START_GEN_VMID) == 0)
+                         flags) == 0)
         restored = true;
 
     if (intermediatefd != -1) {
@@ -16297,6 +16301,9 @@ qemuDomainRevertToSnapshot(virDomainSnapshotPtr snapshot,
     case VIR_DOMAIN_SNAPSHOT_PAUSED:
 
         start_flags |= VIR_QEMU_PROCESS_START_PAUSED;
+
+        if (!cookie->hasSlirpHelper)
+            start_flags |= VIR_QEMU_PROCESS_START_NO_SLIRP;
 
         /* Transitions 2, 3, 5, 6, 8, 9 */
         /* When using the loadvm monitor command, qemu does not know

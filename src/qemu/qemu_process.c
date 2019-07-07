@@ -6680,7 +6680,8 @@ qemuProcessLaunch(virConnectPtr conn,
                   VIR_QEMU_PROCESS_START_PAUSED |
                   VIR_QEMU_PROCESS_START_AUTODESTROY |
                   VIR_QEMU_PROCESS_START_NEW |
-                  VIR_QEMU_PROCESS_START_GEN_VMID, -1);
+                  VIR_QEMU_PROCESS_START_GEN_VMID |
+                  VIR_QEMU_PROCESS_START_NO_SLIRP, -1);
 
     cfg = virQEMUDriverGetConfig(driver);
 
@@ -7092,7 +7093,8 @@ qemuProcessStart(virConnectPtr conn,
     virCheckFlagsGoto(VIR_QEMU_PROCESS_START_COLD |
                       VIR_QEMU_PROCESS_START_PAUSED |
                       VIR_QEMU_PROCESS_START_AUTODESTROY |
-                      VIR_QEMU_PROCESS_START_GEN_VMID, cleanup);
+                      VIR_QEMU_PROCESS_START_GEN_VMID |
+                      VIR_QEMU_PROCESS_START_NO_SLIRP, cleanup);
 
     if (!migrateFrom && !snapshot)
         flags |= VIR_QEMU_PROCESS_START_NEW;
