@@ -214,40 +214,6 @@ static int testCreateNoSystemd(const void *opaque G_GNUC_UNUSED)
     return 0;
 }
 
-static int testCreateSystemdNotRunning(const void *opaque G_GNUC_UNUSED)
-{
-    unsigned char uuid[VIR_UUID_BUFLEN] = {
-        1, 1, 1, 1,
-        2, 2, 2, 2,
-        3, 3, 3, 3,
-        4, 4, 4, 4
-    };
-    int rv;
-
-    g_setenv("FAIL_NOT_REGISTERED", "1", TRUE);
-
-    if ((rv = virSystemdCreateMachine("demo",
-                                      "qemu",
-                                      uuid,
-                                      NULL,
-                                      123,
-                                      false,
-                                      0, NULL,
-                                      NULL, 0)) == 0) {
-        g_unsetenv("FAIL_NOT_REGISTERED");
-        fprintf(stderr, "%s", "Unexpected create machine success\n");
-        return -1;
-    }
-    g_unsetenv("FAIL_NOT_REGISTERED");
-
-    if (rv != -2) {
-        fprintf(stderr, "%s", "Unexpected create machine error\n");
-        return -1;
-    }
-
-    return 0;
-}
-
 static int testCreateBadSystemd(const void *opaque G_GNUC_UNUSED)
 {
     unsigned char uuid[VIR_UUID_BUFLEN] = {
@@ -652,7 +618,6 @@ mymain(void)
     DO_TEST("Test create machine ", testCreateMachine);
     DO_TEST("Test terminate machine ", testTerminateMachine);
     DO_TEST("Test create no systemd ", testCreateNoSystemd);
-    DO_TEST("Test create systemd not running ", testCreateSystemdNotRunning);
     DO_TEST("Test create bad systemd ", testCreateBadSystemd);
     DO_TEST("Test create with network ", testCreateNetwork);
     DO_TEST("Test getting machine name ", testGetMachineName);
