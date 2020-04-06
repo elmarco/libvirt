@@ -148,16 +148,18 @@ void virSystemdHasLogindResetCachedValue(void)
  *  0 = machine1 is available
  */
 static int
-virSystemdHasMachined(void)
+virSystemdHasMachined(GDBusConnection **conn)
 {
     int ret;
     int val;
+
+    *conn = geteuid() ? virGDBusGetSessionBus() : virGDBusGetSystemBus();
 
     val = g_atomic_int_get(&virSystemdHasMachinedCachedValue);
     if (val != -1)
         return val;
 
-    if ((ret = virGDBusSystemIsServiceEnabled("org.freedesktop.machine1")) < 0) {
+    if ((ret = virGDBusIsServiceEnabled(*conn, "org.freedesktop.machine1")) < 0) {
         if (ret == -2)
             g_atomic_int_set(&virSystemdHasMachinedCachedValue, -2);
         return ret;
@@ -202,10 +204,7 @@ virSystemdGetMachineNameByPID(pid_t pid)
     g_autofree char *object = NULL;
     char *name = NULL;
 
-    if (virSystemdHasMachined() < 0)
-        return NULL;
-
-    if (!(conn = virGDBusGetSystemBus()))
+    if (virSystemdHasMachined(&conn) < 0)
         return NULL;
 
     message = g_variant_new("(u)", pid);
@@ -291,11 +290,8 @@ int virSystemdCreateMachine(const char *name,
     g_autofree char *scopename = NULL;
     static int hasCreateWithNetwork = 1;
 
-    if ((rc = virSystemdHasMachined()) < 0)
+    if ((rc = virSystemdHasMachined(&conn)) < 0)
         return rc;
-
-    if (!(conn = virGDBusGetSystemBus()))
-        return -1;
 
     creatorname = g_strdup_printf("libvirt-%s", drivername);
 
@@ -486,11 +482,8 @@ int virSystemdTerminateMachine(const char *name)
     if (!name)
         return 0;
 
-    if ((rc = virSystemdHasMachined()) < 0)
+    if ((rc = virSystemdHasMachined(&conn)) < 0)
         return rc;
-
-    if (!(conn = virGDBusGetSystemBus()))
-        return -1;
 
     error = g_new0(virError, 1);
 
