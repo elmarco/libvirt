@@ -541,11 +541,11 @@ virCgroupV2DevicesPrepareProg(virCgroupPtr group)
 int
 virCgroupV2DevicesRemoveProg(virCgroupPtr group)
 {
-    if (virCgroupV2DevicesDetectProg(group) < 0)
-        return -1;
-
     if (group->unified.devices.progfd <= 0 && group->unified.devices.mapfd <= 0)
         return 0;
+
+    if (virCgroupV2DevicesDetectProg(group) < 0)
+        return -1;
 
     if (group->unified.devices.mapfd >= 0)
         VIR_FORCE_CLOSE(group->unified.devices.mapfd);
