@@ -163,7 +163,7 @@ virSystemdHasMachined(void)
         return ret;
     }
 
-    if ((ret = virGDBusSystemIsServiceRegistered("org.freedesktop.systemd1")) == -1)
+    if ((ret = virGDBusSystemIsServiceRegistered("org.freedesktop.machine1")) == -1)
         return ret;
     g_atomic_int_set(&virSystemdHasMachinedCachedValue, ret);
     return ret;
