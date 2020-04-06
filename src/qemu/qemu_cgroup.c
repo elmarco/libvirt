@@ -915,9 +915,6 @@ qemuInitCgroup(virDomainObjPtr vm,
     qemuDomainObjPrivatePtr priv = vm->privateData;
     g_autoptr(virQEMUDriverConfig) cfg = virQEMUDriverGetConfig(priv->driver);
 
-    if (!priv->driver->privileged)
-        return 0;
-
     if (!virCgroupAvailable())
         return 0;
 

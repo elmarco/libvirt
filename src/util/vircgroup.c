@@ -1327,6 +1327,11 @@ virCgroupNewMachine(const char *name,
     if (rv == -1)
         return -1;
 
+    if (geteuid() != 0) {
+        errno = EPERM;
+        return 0;
+    }
+
     return virCgroupNewMachineManual(name,
                                      drivername,
                                      pidleader,
