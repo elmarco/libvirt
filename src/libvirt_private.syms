@@ -2187,10 +2187,10 @@ virGDBusErrorIsUnknownMethod;
 virGDBusGetSessionBus;
 virGDBusGetSystemBus;
 virGDBusHasSystemBus;
-virGDBusIsServiceEnabled;
-virGDBusIsServiceRegistered;
 virGDBusMessageIsSignal;
 virGDBusSetSharedBus;
+virGDBusSystemIsServiceEnabled;
+virGDBusSystemIsServiceRegistered;
 
 
 # util/virgettext.h

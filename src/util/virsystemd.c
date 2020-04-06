@@ -157,13 +157,13 @@ virSystemdHasMachined(void)
     if (val != -1)
         return val;
 
-    if ((ret = virGDBusIsServiceEnabled("org.freedesktop.machine1")) < 0) {
+    if ((ret = virGDBusSystemIsServiceEnabled("org.freedesktop.machine1")) < 0) {
         if (ret == -2)
             g_atomic_int_set(&virSystemdHasMachinedCachedValue, -2);
         return ret;
     }
 
-    if ((ret = virGDBusIsServiceRegistered("org.freedesktop.systemd1")) == -1)
+    if ((ret = virGDBusSystemIsServiceRegistered("org.freedesktop.systemd1")) == -1)
         return ret;
     g_atomic_int_set(&virSystemdHasMachinedCachedValue, ret);
     return ret;
@@ -179,14 +179,14 @@ virSystemdHasLogind(void)
     if (val != -1)
         return val;
 
-    ret = virGDBusIsServiceEnabled("org.freedesktop.login1");
+    ret = virGDBusSystemIsServiceEnabled("org.freedesktop.login1");
     if (ret < 0) {
         if (ret == -2)
             g_atomic_int_set(&virSystemdHasLogindCachedValue, -2);
         return ret;
     }
 
-    if ((ret = virGDBusIsServiceRegistered("org.freedesktop.login1")) == -1)
+    if ((ret = virGDBusSystemIsServiceRegistered("org.freedesktop.login1")) == -1)
         return ret;
 
     g_atomic_int_set(&virSystemdHasLogindCachedValue, ret);

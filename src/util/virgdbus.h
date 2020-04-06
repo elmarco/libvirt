@@ -67,10 +67,10 @@ virGDBusCallMethodWithFD(GDBusConnection *conn,
                          GUnixFDList *dataFD);
 
 int
-virGDBusIsServiceEnabled(const char *name);
+virGDBusSystemIsServiceEnabled(const char *name);
 
 int
-virGDBusIsServiceRegistered(const char *name);
+virGDBusSystemIsServiceRegistered(const char *name);
 
 bool
 virGDBusErrorIsUnknownMethod(virErrorPtr err);
