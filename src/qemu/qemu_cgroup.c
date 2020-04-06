@@ -1130,15 +1130,6 @@ qemuSetupCgroupForExtDevices(virDomainObjPtr vm,
         priv->cgroup == NULL)
         return 0; /* Not supported, so claim success */
 
-    /*
-     * If CPU cgroup controller is not initialized here, then we need
-     * neither period nor quota settings.  And if CPUSET controller is
-     * not initialized either, then there's nothing to do anyway.
-     */
-    if (!virCgroupHasController(priv->cgroup, VIR_CGROUP_CONTROLLER_CPU) &&
-        !virCgroupHasController(priv->cgroup, VIR_CGROUP_CONTROLLER_CPUSET))
-        return 0;
-
     if (virCgroupNewThread(priv->cgroup, VIR_CGROUP_THREAD_EMULATOR, 0,
                            false, &cgroup_temp) < 0)
         return -1;
