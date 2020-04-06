@@ -67,7 +67,15 @@ virGDBusCallMethodWithFD(GDBusConnection *conn,
                          GUnixFDList *dataFD);
 
 int
+virGDBusIsServiceEnabled(GDBusConnection *conn,
+                         const char *name);
+
+int
 virGDBusSystemIsServiceEnabled(const char *name);
+
+int
+virGDBusIsServiceRegistered(GDBusConnection *conn,
+                            const char *name);
 
 int
 virGDBusSystemIsServiceRegistered(const char *name);

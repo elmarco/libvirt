@@ -332,21 +332,14 @@ virGDBusCallMethodWithFD(GDBusConnection *conn G_GNUC_UNUSED,
 
 
 static int
-virGDBusSystemIsServiceInList(const char *listMethod,
-                              const char *name)
+virGDBusIsServiceInList(GDBusConnection *conn,
+                        const char *listMethod,
+                        const char *name)
 {
-    GDBusConnection *conn;
     g_autoptr(GVariant) reply = NULL;
     g_autoptr(GVariantIter) iter = NULL;
     char *str;
     int rc;
-
-    if (!virGDBusHasSystemBus())
-        return -2;
-
-    conn = virGDBusGetSystemBus();
-    if (!conn)
-        return -1;
 
     rc = virGDBusCallMethod(conn,
                             &reply,
@@ -374,6 +367,25 @@ virGDBusSystemIsServiceInList(const char *listMethod,
 
 
 /**
+ * virGDBusIsServiceEnabled:
+ * @conn: a GDBus connection
+ * @name: service name
+ *
+ * Returns 0 if service is available, -1 on fatal error, or -2 if service is not available
+ */
+int
+virGDBusIsServiceEnabled(GDBusConnection *conn,
+                         const char *name)
+{
+    int ret = virGDBusIsServiceInList(conn, "ListActivatableNames", name);
+
+    VIR_DEBUG("Service %s is %s", name, ret ? "unavailable" : "available");
+
+    return ret;
+}
+
+
+/**
  * virGDBusSystemIsServiceEnabled:
  * @name: service name
  *
@@ -382,9 +394,33 @@ virGDBusSystemIsServiceInList(const char *listMethod,
 int
 virGDBusSystemIsServiceEnabled(const char *name)
 {
-    int ret = virGDBusSystemIsServiceInList("ListActivatableNames", name);
+    GDBusConnection *conn;
 
-    VIR_DEBUG("Service %s is %s", name, ret ? "unavailable" : "available");
+    if (!virGDBusHasSystemBus())
+        return -2;
+
+    conn = virGDBusGetSystemBus();
+    if (!conn)
+        return -1;
+
+    return virGDBusIsServiceEnabled(conn, name);
+}
+
+
+/**
+ * virGDBusIsServiceRegistered:
+ * @conn: a GDBus connection
+ * @name: service name
+ *
+ * Returns 0 if service is registered, -1 on fatal error, or -2 if service is not registered
+ */
+int
+virGDBusIsServiceRegistered(GDBusConnection *conn,
+                            const char *name)
+{
+    int ret = virGDBusIsServiceInList(conn, "ListNames", name);
+
+    VIR_DEBUG("Service %s is %s", name, ret ? "not registered" : "registered");
 
     return ret;
 }
@@ -399,11 +435,16 @@ virGDBusSystemIsServiceEnabled(const char *name)
 int
 virGDBusSystemIsServiceRegistered(const char *name)
 {
-    int ret = virGDBusSystemIsServiceInList("ListNames", name);
+    GDBusConnection *conn;
 
-    VIR_DEBUG("Service %s is %s", name, ret ? "not registered" : "registered");
+    if (!virGDBusHasSystemBus())
+        return -2;
 
-    return ret;
+    conn = virGDBusGetSystemBus();
+    if (!conn)
+        return -1;
+
+    return virGDBusIsServiceRegistered(conn, name);
 }
 
 
