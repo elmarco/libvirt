@@ -2734,6 +2734,9 @@ qemuProcessSetupPid(virDomainObjPtr vm,
         affinity_cpumask = hostcpumap;
     }
 
+    if (priv->cgroup && virCgroupNewThread(priv->cgroup, nameval, id, true, &cgroup) < 0)
+        goto cleanup;
+
     /*
      * If CPU cgroup controller is not initialized here, then we need
      * neither period nor quota settings.  And if CPUSET controller is
@@ -2747,9 +2750,6 @@ qemuProcessSetupPid(virDomainObjPtr vm,
             virDomainNumatuneMaybeFormatNodeset(vm->def->numa,
                                                 priv->autoNodeset,
                                                 &mem_mask, -1) < 0)
-            goto cleanup;
-
-        if (virCgroupNewThread(priv->cgroup, nameval, id, true, &cgroup) < 0)
             goto cleanup;
 
         if (virCgroupHasController(priv->cgroup, VIR_CGROUP_CONTROLLER_CPUSET)) {
