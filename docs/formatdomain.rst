@@ -6060,6 +6060,23 @@ interaction with the admin.
            <gl rendernode='/dev/dri/renderD128'/>
          </graphics>
 
+   ``dbus``:since:`Since X.X.X`
+      Export the display over D-Bus. By default, it will use a private bus.
+
+      ``p2p``
+
+      ``addr``
+
+      It may provide accelerated server-side rendering with OpenGL. You can
+      enable or disable OpenGL support explicitly with the ``gl`` element.
+
+      By default, QEMU will pick the first available GPU DRM render node. You
+      may specify a DRM render node path to use instead.
+
+      ::
+
+        <graphics type='dbus'/>
+
 Graphics device uses a ``<listen>`` to set up where the device should listen for
 clients. It has a mandatory attribute ``type`` which specifies the listen type.
 Only ``vnc``, ``spice`` and ``rdp`` supports ``<listen>`` element. :since:`Since
