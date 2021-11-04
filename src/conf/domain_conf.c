@@ -755,6 +755,7 @@ VIR_ENUM_IMPL(virDomainAudioType,
               "sdl",
               "spice",
               "file",
+              "dbus",
 );
 
 VIR_ENUM_IMPL(virDomainAudioSDLDriver,
@@ -3015,6 +3016,7 @@ virDomainAudioDefFree(virDomainAudioDef *def)
         g_free(def->backend.file.path);
         break;
 
+    case VIR_DOMAIN_AUDIO_TYPE_DBUS:
     case VIR_DOMAIN_AUDIO_TYPE_LAST:
         break;
     }
@@ -12901,6 +12903,14 @@ virDomainGraphicsDefParseXMLDBus(virDomainGraphicsDef *def,
             return -1;
     }
 
+    cur = virXPathNode("./audio", ctxt);
+    if (cur) {
+        if (virXMLPropUInt(cur, "id", 10,
+                           VIR_XML_PROP_REQUIRED | VIR_XML_PROP_NONZERO,
+                           &def->data.dbus.audioId) < 0)
+            return -1;
+    }
+
     return 0;
 }
 
@@ -13389,6 +13399,9 @@ virDomainAudioDefParseXML(virDomainXMLOption *xmlopt G_GNUC_UNUSED,
 
     case VIR_DOMAIN_AUDIO_TYPE_FILE:
         def->backend.file.path = virXMLPropString(node, "path");
+        break;
+
+    case VIR_DOMAIN_AUDIO_TYPE_DBUS:
         break;
 
     case VIR_DOMAIN_AUDIO_TYPE_LAST:
@@ -25728,6 +25741,9 @@ virDomainAudioDefFormat(virBuffer *buf,
 
     case VIR_DOMAIN_AUDIO_TYPE_FILE:
         virBufferEscapeString(&attrBuf, " path='%s'", def->backend.file.path);
+        break;
+
+    case VIR_DOMAIN_AUDIO_TYPE_DBUS:
         break;
 
     case VIR_DOMAIN_AUDIO_TYPE_LAST:

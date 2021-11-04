@@ -152,6 +152,7 @@ VIR_ENUM_IMPL(qemuAudioDriver,
               "sdl",
               "spice",
               "wav",
+              "dbus",
 );
 
 
@@ -8008,6 +8009,9 @@ qemuBuildAudioCommandLineArg(virCommand *cmd,
             virBufferEscapeString(&buf, ",path=%s", def->backend.file.path);
         break;
 
+    case VIR_DOMAIN_AUDIO_TYPE_DBUS:
+        break;
+
     case VIR_DOMAIN_AUDIO_TYPE_LAST:
     default:
         virReportEnumRangeError(virDomainAudioType, def->type);
@@ -8201,6 +8205,9 @@ qemuBuildAudioCommandLineEnv(virCommand *cmd,
         if (audio->backend.file.path)
             virCommandAddEnvFormat(cmd, "QEMU_WAV_PATH=%s",
                                    audio->backend.file.path);
+        break;
+
+    case VIR_DOMAIN_AUDIO_TYPE_DBUS:
         break;
 
     case VIR_DOMAIN_AUDIO_TYPE_LAST:
@@ -8601,6 +8608,7 @@ qemuBuildGraphicsEGLHeadlessCommandLine(virQEMUDriverConfig *cfg G_GNUC_UNUSED,
 static int
 qemuBuildGraphicsDBusCommandLine(virQEMUDriver *driver,
                                  virDomainObj *vm,
+                                 virDomainDef *def,
                                  virCommand *cmd,
                                  virDomainGraphicsDef *graphics)
 {
@@ -8627,6 +8635,13 @@ qemuBuildGraphicsDBusCommandLine(virQEMUDriver *driver,
         virBufferAddLit(&opt, ",rendernode=");
         virQEMUBuildBufferEscapeComma(&opt,
                                       graphics->data.dbus.rendernode);
+    }
+
+    if (graphics->data.dbus.audioId > 0) {
+        g_autofree char *audioid = qemuGetAudioIDString(def, graphics->data.dbus.audioId);
+        if (!audioid)
+            return -1;
+        virBufferAsprintf(&opt, ",audiodev=%s", audioid);
     }
 
     virCommandAddArg(cmd, "-display");
@@ -8675,7 +8690,7 @@ qemuBuildGraphicsCommandLine(virQEMUDriver *driver,
 
             break;
         case VIR_DOMAIN_GRAPHICS_TYPE_DBUS:
-            if (qemuBuildGraphicsDBusCommandLine(driver, vm, cmd,
+            if (qemuBuildGraphicsDBusCommandLine(driver, vm, def, cmd,
                                                  graphics) < 0)
                 return -1;
 
