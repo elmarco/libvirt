@@ -8619,10 +8619,9 @@ qemuBuildGraphicsDBusCommandLine(virQEMUDriver *driver,
 {
     g_autofree char *charAlias = NULL;
     g_auto(virBuffer) opt = VIR_BUFFER_INITIALIZER;
-    g_autofree char *dbus_addr = g_strdup(graphics->data.dbus.address);
 
-    if (!graphics->data.dbus.p2p && !dbus_addr) {
-        dbus_addr = qemuDBusGetAddress(driver, vm);
+    if (!graphics->data.dbus.p2p && !graphics->data.dbus.address) {
+        graphics->data.dbus.address = qemuDBusGetAddress(driver, vm);
         QEMU_DOMAIN_PRIVATE(vm)->dbusDaemonWanted = true;
     }
 
@@ -8630,9 +8629,9 @@ qemuBuildGraphicsDBusCommandLine(virQEMUDriver *driver,
 
     if (graphics->data.dbus.p2p) {
         virBufferAddLit(&opt, ",p2p=on");
-    } else if (dbus_addr) {
+    } else {
         virBufferAddLit(&opt, ",addr=");
-        virQEMUBuildBufferEscapeComma(&opt, dbus_addr);
+        virQEMUBuildBufferEscapeComma(&opt, graphics->data.dbus.address);
     }
     if (graphics->data.dbus.gl != VIR_TRISTATE_BOOL_ABSENT)
         virBufferAsprintf(&opt, ",gl=%s",
