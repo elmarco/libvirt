@@ -1209,6 +1209,7 @@ typedef enum {
     VIR_DOMAIN_CHR_TYPE_SPICEVMC,
     VIR_DOMAIN_CHR_TYPE_SPICEPORT,
     VIR_DOMAIN_CHR_TYPE_NMDM,
+    VIR_DOMAIN_CHR_TYPE_DBUS,
 
     VIR_DOMAIN_CHR_TYPE_LAST
 } virDomainChrType;
@@ -1277,6 +1278,9 @@ struct _virDomainChrSourceDef {
         struct {
             char *channel;
         } spiceport;
+        struct {
+            char *channel;
+        } dbus;
     } data;
     char *logfile;
     virTristateSwitch logappend;

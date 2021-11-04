@@ -1563,6 +1563,10 @@ mymain(void)
             QEMU_CAPS_DEVICE_CIRRUS_VGA,
             QEMU_CAPS_DISPLAY_DBUS,
             QEMU_CAPS_CHARDEV_VDAGENT);
+    DO_TEST("graphics-dbus-chardev",
+            QEMU_CAPS_DEVICE_ISA_SERIAL,
+            QEMU_CAPS_DEVICE_CIRRUS_VGA,
+            QEMU_CAPS_DISPLAY_DBUS);
 
     DO_TEST_NOCAPS("input-usbmouse");
     DO_TEST_NOCAPS("input-usbtablet");

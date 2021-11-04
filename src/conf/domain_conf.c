@@ -701,6 +701,7 @@ VIR_ENUM_IMPL(virDomainChr,
               "spicevmc",
               "spiceport",
               "nmdm",
+              "dbus",
 );
 
 VIR_ENUM_IMPL(virDomainChrTcpProtocol,
@@ -2673,6 +2674,7 @@ virDomainChrSourceDefGetPath(virDomainChrSourceDef *chr)
     case VIR_DOMAIN_CHR_TYPE_STDIO:
     case VIR_DOMAIN_CHR_TYPE_SPICEVMC:
     case VIR_DOMAIN_CHR_TYPE_SPICEPORT:
+    case VIR_DOMAIN_CHR_TYPE_DBUS:
     case VIR_DOMAIN_CHR_TYPE_LAST:
         return NULL;
     }
@@ -2715,6 +2717,10 @@ virDomainChrSourceDefClear(virDomainChrSourceDef *def)
 
     case VIR_DOMAIN_CHR_TYPE_SPICEPORT:
         VIR_FREE(def->data.spiceport.channel);
+        break;
+
+    case VIR_DOMAIN_CHR_TYPE_DBUS:
+        VIR_FREE(def->data.dbus.channel);
         break;
     }
 
@@ -2770,7 +2776,14 @@ virDomainChrSourceDefCopy(virDomainChrSourceDef *dest,
     case VIR_DOMAIN_CHR_TYPE_NMDM:
         dest->data.nmdm.master = g_strdup(src->data.nmdm.master);
         dest->data.nmdm.slave = g_strdup(src->data.nmdm.slave);
+        break;
 
+    case VIR_DOMAIN_CHR_TYPE_SPICEPORT:
+        dest->data.spiceport.channel = g_strdup(src->data.spiceport.channel);
+        break;
+
+    case VIR_DOMAIN_CHR_TYPE_DBUS:
+        dest->data.dbus.channel = g_strdup(src->data.dbus.channel);
         break;
     }
 
@@ -2851,6 +2864,11 @@ virDomainChrSourceDefIsEqual(const virDomainChrSourceDef *src,
 
     case VIR_DOMAIN_CHR_TYPE_SPICEVMC:
         return src->data.spicevmc == tgt->data.spicevmc;
+
+    case VIR_DOMAIN_CHR_TYPE_DBUS:
+        return STREQ_NULLABLE(src->data.dbus.channel,
+                              tgt->data.dbus.channel);
+        break;
 
     case VIR_DOMAIN_CHR_TYPE_NULL:
     case VIR_DOMAIN_CHR_TYPE_VC:
@@ -11398,6 +11416,10 @@ virDomainChrSourceDefParseXML(virDomainChrSourceDef *def,
 
         case VIR_DOMAIN_CHR_TYPE_SPICEPORT:
             def->data.spiceport.channel = virXMLPropString(sources[0], "channel");
+            break;
+
+        case VIR_DOMAIN_CHR_TYPE_DBUS:
+            def->data.dbus.channel = virXMLPropString(sources[0], "channel");
             break;
 
         case VIR_DOMAIN_CHR_TYPE_NMDM:
@@ -25233,6 +25255,10 @@ virDomainChrSourceDefFormat(virBuffer *buf,
                               def->data.spiceport.channel);
         break;
 
+    case VIR_DOMAIN_CHR_TYPE_DBUS:
+        virBufferEscapeString(buf, "<source channel='%s'/>\n",
+                              def->data.dbus.channel);
+        break;
     }
 
     if (def->logfile) {

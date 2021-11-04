@@ -5288,6 +5288,11 @@ qemuBuildChrChardevStr(virLogManager *logManager,
                           dev->data.spiceport.channel);
         break;
 
+    case VIR_DOMAIN_CHR_TYPE_DBUS:
+        virBufferAsprintf(&buf, "dbus,id=%s,name=%s", charAlias,
+                          dev->data.dbus.channel);
+        break;
+
     default:
         virReportError(VIR_ERR_CONFIG_UNSUPPORTED,
                        _("unsupported chardev '%s'"),
@@ -8753,6 +8758,7 @@ qemuInterfaceVhostuserConnect(virQEMUDriver *driver,
     case VIR_DOMAIN_CHR_TYPE_SPICEVMC:
     case VIR_DOMAIN_CHR_TYPE_SPICEPORT:
     case VIR_DOMAIN_CHR_TYPE_NMDM:
+    case VIR_DOMAIN_CHR_TYPE_DBUS:
     case VIR_DOMAIN_CHR_TYPE_LAST:
         virReportError(VIR_ERR_INTERNAL_ERROR,
                        _("vhost-user type '%s' not supported"),

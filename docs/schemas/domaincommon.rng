@@ -4506,6 +4506,7 @@
       <value>spicevmc</value>
       <value>spiceport</value>
       <value>nmdm</value>
+      <value>dbus</value>
     </choice>
   </define>
 
