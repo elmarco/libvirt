@@ -632,6 +632,7 @@ typedef enum { /* virQEMUCapsFlags grouping marker for syntax-check */
     QEMU_CAPS_QUERY_DIRTY_RATE, /* accepts query-dirty-rate */
     QEMU_CAPS_RBD_ENCRYPTION, /* Ceph RBD encryption support */
     QEMU_CAPS_CHARDEV_VDAGENT, /* -chardev qemu-vdagent */
+    QEMU_CAPS_DISPLAY_DBUS, /* -display dbus */
 
     QEMU_CAPS_LAST /* this must always be the last item */
 } virQEMUCapsFlags;

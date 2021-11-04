@@ -5000,6 +5000,10 @@
         {
           "case": "spice-app",
           "type": "0"
+        },
+        {
+          "case": "dbus",
+          "type": "0"
         }
       ],
       "members": [
@@ -11456,6 +11460,9 @@
         },
         {
           "name": "spice-app"
+        },
+        {
+          "name": "dbus"
         }
       ],
       "meta-type": "enum",
@@ -11465,7 +11472,8 @@
         "sdl",
         "egl-headless",
         "curses",
-        "spice-app"
+        "spice-app",
+        "dbus"
       ]
     },
     {
