@@ -4034,6 +4034,14 @@
                 </attribute>
               </element>
             </optional>
+            <optional>
+              <element name="clipboard">
+                <attribute name="copypaste">
+                  <ref name="virYesNo"/>
+                </attribute>
+                <empty/>
+              </element>
+            </optional>
           </interleave>
         </group>
         <group>

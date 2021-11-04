@@ -8612,6 +8612,7 @@ qemuBuildGraphicsDBusCommandLine(virQEMUDriver *driver,
                                  virCommand *cmd,
                                  virDomainGraphicsDef *graphics)
 {
+    g_autofree char *charAlias = NULL;
     g_auto(virBuffer) opt = VIR_BUFFER_INITIALIZER;
     g_autofree char *dbus_addr = g_strdup(graphics->data.dbus.address);
 
@@ -8646,6 +8647,17 @@ qemuBuildGraphicsDBusCommandLine(virQEMUDriver *driver,
 
     virCommandAddArg(cmd, "-display");
     virCommandAddArgBuffer(cmd, &opt);
+
+
+    if (graphics->data.dbus.copypaste == VIR_TRISTATE_BOOL_YES) {
+        if (!(charAlias = qemuAliasChardevFromDevAlias("qemu-vdagent")))
+            return -1;
+
+        virBufferAsprintf(&opt, "qemu-vdagent,id=%s", charAlias);
+        virBufferAddLit(&opt, ",clipboard=on");
+        virCommandAddArg(cmd, "-chardev");
+        virCommandAddArgBuffer(cmd, &opt);
+    }
 
     return 0;
 }

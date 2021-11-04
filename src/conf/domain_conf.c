@@ -12911,6 +12911,13 @@ virDomainGraphicsDefParseXMLDBus(virDomainGraphicsDef *def,
             return -1;
     }
 
+    if ((cur = virXPathNode("./clipboard", ctxt))) {
+        if (virXMLPropTristateBool(cur, "copypaste",
+                                   VIR_XML_PROP_REQUIRED,
+                                   &def->data.dbus.copypaste) < 0)
+            return -1;
+    }
+
     return 0;
 }
 

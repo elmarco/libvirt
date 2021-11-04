@@ -1914,6 +1914,7 @@ struct _virDomainGraphicsDef {
             char *rendernode;
             virTristateBool gl;
             unsigned int audioId;
+            virTristateBool copypaste;
         } dbus;
     } data;
     /* nListens, listens, and *port are only useful if type is vnc,
