@@ -1723,6 +1723,7 @@ typedef enum {
     VIR_DOMAIN_GRAPHICS_TYPE_DESKTOP,
     VIR_DOMAIN_GRAPHICS_TYPE_SPICE,
     VIR_DOMAIN_GRAPHICS_TYPE_EGL_HEADLESS,
+    VIR_DOMAIN_GRAPHICS_TYPE_DBUS,
 
     VIR_DOMAIN_GRAPHICS_TYPE_LAST
 } virDomainGraphicsType;
@@ -1906,6 +1907,12 @@ struct _virDomainGraphicsDef {
         struct {
             char *rendernode;
         } egl_headless;
+        struct {
+            bool p2p;
+            char *address;
+            char *rendernode;
+            virTristateBool gl;
+        } dbus;
     } data;
     /* nListens, listens, and *port are only useful if type is vnc,
      * rdp, or spice. They've been extracted from the union only to

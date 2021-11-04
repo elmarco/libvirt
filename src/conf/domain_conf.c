@@ -911,6 +911,7 @@ VIR_ENUM_IMPL(virDomainGraphics,
               "desktop",
               "spice",
               "egl-headless",
+              "dbus",
 );
 
 VIR_ENUM_IMPL(virDomainGraphicsListen,
@@ -1881,6 +1882,11 @@ void virDomainGraphicsDefFree(virDomainGraphicsDef *def)
 
     case VIR_DOMAIN_GRAPHICS_TYPE_EGL_HEADLESS:
         g_free(def->data.egl_headless.rendernode);
+        break;
+
+    case VIR_DOMAIN_GRAPHICS_TYPE_DBUS:
+        g_free(def->data.dbus.address);
+        g_free(def->data.dbus.rendernode);
         break;
 
     case VIR_DOMAIN_GRAPHICS_TYPE_LAST:
@@ -12867,6 +12873,38 @@ virDomainGraphicsDefParseXMLEGLHeadless(virDomainGraphicsDef *def,
 }
 
 
+static int
+virDomainGraphicsDefParseXMLDBus(virDomainGraphicsDef *def,
+                                 xmlNodePtr node,
+                                 xmlXPathContextPtr ctxt)
+{
+    VIR_XPATH_NODE_AUTORESTORE(ctxt)
+    xmlNodePtr cur;
+    virTristateBool p2p;
+
+    if (virXMLPropTristateBool(node, "p2p", VIR_XML_PROP_NONE,
+                               &p2p) < 0)
+        return -1;
+    def->data.dbus.p2p = p2p == VIR_TRISTATE_BOOL_YES;
+
+    def->data.dbus.address = virXMLPropString(node, "address");
+
+    ctxt->node = node;
+
+    if ((cur = virXPathNode("./gl", ctxt))) {
+        def->data.dbus.rendernode = virXMLPropString(cur,
+                                                     "rendernode");
+
+        if (virXMLPropTristateBool(cur, "enable",
+                                   VIR_XML_PROP_REQUIRED,
+                                   &def->data.dbus.gl) < 0)
+            return -1;
+    }
+
+    return 0;
+}
+
+
 virDomainGraphicsDef *
 virDomainGraphicsDefNew(virDomainXMLOption *xmlopt)
 {
@@ -12940,6 +12978,10 @@ virDomainGraphicsDefParseXML(virDomainXMLOption *xmlopt,
         break;
     case VIR_DOMAIN_GRAPHICS_TYPE_EGL_HEADLESS:
         virDomainGraphicsDefParseXMLEGLHeadless(def, node, ctxt);
+        break;
+    case VIR_DOMAIN_GRAPHICS_TYPE_DBUS:
+        if (virDomainGraphicsDefParseXMLDBus(def, node, ctxt) < 0)
+            goto error;
         break;
     case VIR_DOMAIN_GRAPHICS_TYPE_LAST:
         break;
@@ -26615,6 +26657,15 @@ virDomainGraphicsDefFormat(virBuffer *buf,
                               def->data.egl_headless.rendernode);
         virBufferAddLit(buf, "/>\n");
         break;
+    case VIR_DOMAIN_GRAPHICS_TYPE_DBUS:
+        if (def->data.dbus.p2p)
+            virBufferAddLit(buf, " p2p='yes'");
+        if (def->data.dbus.address)
+            virBufferAsprintf(buf, " address='%s'",
+                              def->data.dbus.address);
+        if (!def->data.dbus.rendernode)
+            break;
+        break;
     case VIR_DOMAIN_GRAPHICS_TYPE_LAST:
         break;
     }
@@ -31185,6 +31236,11 @@ virDomainGraphicsDefHasOpenGL(const virDomainDef *def)
         case VIR_DOMAIN_GRAPHICS_TYPE_EGL_HEADLESS:
             return true;
 
+        case VIR_DOMAIN_GRAPHICS_TYPE_DBUS:
+            if (graphics->data.dbus.gl == VIR_TRISTATE_BOOL_YES)
+                return true;
+
+            continue;
         case VIR_DOMAIN_GRAPHICS_TYPE_LAST:
             break;
         }
@@ -31200,7 +31256,8 @@ virDomainGraphicsSupportsRenderNode(const virDomainGraphicsDef *graphics)
     bool ret = false;
 
     if (graphics->type == VIR_DOMAIN_GRAPHICS_TYPE_SPICE ||
-        graphics->type == VIR_DOMAIN_GRAPHICS_TYPE_EGL_HEADLESS)
+        graphics->type == VIR_DOMAIN_GRAPHICS_TYPE_EGL_HEADLESS ||
+        graphics->type == VIR_DOMAIN_GRAPHICS_TYPE_DBUS)
         ret = true;
 
     return ret;
@@ -31218,6 +31275,9 @@ virDomainGraphicsGetRenderNode(const virDomainGraphicsDef *graphics)
         break;
     case VIR_DOMAIN_GRAPHICS_TYPE_EGL_HEADLESS:
         ret = graphics->data.egl_headless.rendernode;
+        break;
+    case VIR_DOMAIN_GRAPHICS_TYPE_DBUS:
+        ret = graphics->data.dbus.rendernode;
         break;
     case VIR_DOMAIN_GRAPHICS_TYPE_SDL:
     case VIR_DOMAIN_GRAPHICS_TYPE_VNC:
