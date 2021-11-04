@@ -237,6 +237,7 @@ struct _qemuDomainObjPrivate {
     /* running backup job */
     virDomainBackupDef *backup;
 
+    bool dbusDaemonWanted;
     bool dbusDaemonRunning;
 
     /* list of Ids to migrate */

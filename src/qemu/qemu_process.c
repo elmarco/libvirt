@@ -7284,6 +7284,10 @@ qemuProcessLaunch(virConnectPtr conn,
                                      &nnicindexes, &nicindexes, 0)))
         goto cleanup;
 
+    if (QEMU_DOMAIN_PRIVATE(vm)->dbusDaemonWanted &&
+        qemuDBusStart(driver, vm) < 0)
+        goto cleanup;
+
     if (incoming && incoming->fd != -1)
         virCommandPassFD(cmd, incoming->fd, 0);
 
