@@ -8628,9 +8628,9 @@ qemuBuildGraphicsDBusCommandLine(virQEMUDriver *driver,
 
     virBufferAddLit(&opt, "dbus");
 
-    if (graphics->data.dbus.p2p)
+    if (graphics->data.dbus.p2p) {
         virBufferAddLit(&opt, ",p2p=on");
-    if (dbus_addr) {
+    } else if (dbus_addr) {
         virBufferAddLit(&opt, ",addr=");
         virQEMUBuildBufferEscapeComma(&opt, dbus_addr);
     }

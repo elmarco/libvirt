@@ -5050,11 +5050,16 @@ qemuProcessGraphicsSetupRenderNode(virDomainGraphicsDef *graphics,
             return 0;
 
         rendernode = &graphics->data.spice.rendernode;
-    } else {
+    } else if (graphics->type == VIR_DOMAIN_GRAPHICS_TYPE_EGL_HEADLESS) {
         if (!virQEMUCapsGet(qemuCaps, QEMU_CAPS_EGL_HEADLESS_RENDERNODE))
             return 0;
 
         rendernode = &graphics->data.egl_headless.rendernode;
+    } else if (graphics->type == VIR_DOMAIN_GRAPHICS_TYPE_DBUS) {
+        rendernode = &graphics->data.dbus.rendernode;
+    } else {
+        g_warn_if_reached();
+        return -1;
     }
 
     if (!(*rendernode = virHostGetDRMRenderNode()))
